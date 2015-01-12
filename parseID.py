@@ -26,12 +26,8 @@ def OnKeyboardEvent(event):
         idNumber = idCheck.group()[2:-2]
         print "Your ID number is: " + idNumber
 
-        shopUser = wks.find(idNumber)
-        print "Welcome, " + (wks.cell(shopUser.row, shopUser.col - 1).value)
-
-        #idBuffer = ['a']
-    #else:
-        #print ''.join(map(str, idBuffer))
+        #shopUser = wks.find(idNumber)
+        #print "Welcome, " + (wks.cell(shopUser.row, shopUser.col - 1).value)
         
     return True 
 
@@ -45,7 +41,6 @@ hm = pyHook.HookManager()
 hm.KeyDown = OnKeyboardEvent
 hm.HookKeyboard()
 pythoncom.PumpMessages()
-
 
 
 
