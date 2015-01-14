@@ -1,8 +1,8 @@
 import os, time
 import threading, Queue
-import Application.id_logger as id_logger
 
-import Application.shop_user
+import Application.id_logger as id_logger
+import Application.shop_user as shop_user
 
 class WorkerThread(threading.Thread):
     """ A worker thread that takes directory names from a queue, finds all
@@ -54,15 +54,16 @@ class WorkerThread(threading.Thread):
 def main():
     # Create a single input and a single output queue for all threads.
     dir_q = Queue.Queue()
-    result_q = Queue.Queue() 
+    result_q = Queue.Queue()
+
+    shop_user_database = shop_user.ShopUserDatabase(result_q)
     
 
-    # Create the "thread pool"
-    thread = WorkerThread(dir_q=dir_q, result_q=result_q)
-    thread.start()
+##    # Create the "thread pool"
+##    thread = WorkerThread(dir_q=dir_q, result_q=result_q)
+##    thread.start()
 
-    thread = id_logger.IdLogger(result_q=result_q)
-    thread.daemon = True
+    thread = id_logger.IdLogger(shop_user_database)
     thread.start()
 
     while True:
@@ -99,7 +100,8 @@ if __name__ == '__main__':
     main()
 
 
-# Todo: write unit tests  
+# Todo: write unit tests
+# Need to use daemon threads?
 
 
 
