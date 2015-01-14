@@ -1,59 +1,63 @@
 import threading
-import Queue
+import Queue as queue
 
 import winsound
 
 import Application.id_logger as id_logger
 import Application.shop_user as shop_user
+import Application.shop as shop
 
 
 
 class BoardFsm():
 
-    def __init__(self, ):
-        self.shopState = "closed"
-        self.proctorOnDuty = False
-
+    def __init__(self, event_q):
+        self.shop = shop.Shop()
+        self.event_q = event_q
+        
     def standby(self, input):
-        print "\nStanding by. The shop is currently " + shopState + "."
+        print "\nStanding by. The shop is currently " + self.shop.state + "."
         while True:
-            userInput = raw_input("    proctorSwipe or podSwipe: ")
-            
-            if userInput == "proctorSwipe" and shopState == "closed":
-                return openShop(input)
-            elif userInput == "podSwipe" and shopState == "open":
-                return unlockBoard(input)
-            else:
-                return unauthorized(input)
+            event = self.event_q.get()
 
-    def unauthorized(input):
+            if event[0] == "swipe":
+                user = event[1]
+                if user.proctor and self.shop.state == "closed":
+                    return self.openShop(input)
+                elif user in self.shop.pod_list:
+                    return self.unlockBoard(input)
+                else:
+                    return self.unauthorized(input)
+            elif event[0] == "button":
+                pass
+            else:
+                return self.unauthorized(input)
+
+    def unauthorized(self, input):
         print "\nUnauthorized use!"
         winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
         while True:
             userInput = raw_input("    press enter to return to standby.")
-            return standby(input)
+            return self.standby(input)
 
-    def openShop(input):
-        global shopState
-        global proctorOnDuty
+    def openShop(self, input):
         
         print "\nStarting up"
         while True:
             userInput = raw_input("    Type cancel or switch: ")
             if userInput == "cancel": # press cancel
-                return standby(input)
+                return self.standby(input)
             elif userInput == "switch": # flip missile switch to off
-                global shopState
-                shopState = "open"
-                proctorOnDuty = True
+                self.shop.state = "open"
+                self.shop.pod = True
                 print "    Shop now open with proctor now on duty."
                 # log event
                 winsound.Beep(500,250) # old-school mac startup sound
-                return standby(input)
+                return self.standby(input)
             else:
-                return unauthorized(input)
+                return self.unauthorized(input)
 
-    def unlockBoard(input):
+    def unlockBoard(self, input):
         print "\nUnlocking  Board"
         while True:
             userInput = raw_input("    cancel, swipe, remove, clear, pod, switch: ")
@@ -165,7 +169,7 @@ class BoardFsm():
             userInput = raw_input("    cancel, offDutyProctor, onDutyProctor: ")
             if userInput == "cancel":
                 return standby(input)
-            elif userInput == "offDutyProctor" and shopState == "open":
+            elif userInput == "offDutyProctor" and self.shop.state == "open":
                 print "        proctor is now on duty"
                 return standby(input)
             elif userInput == "onDutyProctor": # and another proctor on duty or shop closed
@@ -191,6 +195,7 @@ class BoardFsm():
     # Todo: write unit tests
 # Need to use daemon threads?
     # need to joing non-keylogging threads?
+    # have proctor safety test update the proctorness column
 
 ##    def run(self):
 ##        # As long as we weren't asked to stop, try to take new tasks from the
@@ -209,22 +214,24 @@ class BoardFsm():
 
 def main():
     # Create a single input and a single output queue for all threads.
-    dir_q = Queue.Queue()
-    result_q = Queue.Queue()
+    dir_q = queue.Queue()
+    event_q = queue.Queue()
 
-    shop_user_database = shop_user.ShopUserDatabase(result_q)
-    
+    shop_user_database = shop_user.ShopUserDatabase(event_q)
+    board = BoardFsm(event_q)
 
     thread = id_logger.IdLogger(shop_user_database)
     thread.start()
 
     while True:
-        try:
-            result = result_q.get()
-            print "ID number is %s, name is %s, email is %s, test date is %s, money owed: %s." % (
-                result.id_number, result.name, result.email, result.test_date, result.money_owed)
-        except queue.Empty:
-            continue 
+        board.standby("")
+##        try:
+##            result = result_q.get()
+##            result = result[1]
+##            print "ID number is %s, name is %s, email is %s, test date is %s, money owed: %s." % (
+##                result.id_number, result.name, result.email, result.test_date, result.money_owed)
+##        except queue.Empty:
+##            continue 
 
 if __name__== "__main__":
     main()
