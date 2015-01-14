@@ -2,6 +2,8 @@ import os, time
 import threading, Queue
 import Application.id_logger as id_logger
 
+import Application.shop_user
+
 class WorkerThread(threading.Thread):
     """ A worker thread that takes directory names from a queue, finds all
         files in them recursively and reports the result.
@@ -60,10 +62,16 @@ def main():
     thread.start()
 
     thread = id_logger.IdLogger(result_q=result_q)
+    thread.daemon = True
     thread.start()
 
     while True:
-        pass
+        try:
+            result = result_q.get()
+            print "ID number is %s, name is %s, email is %s, test date is %s, money owed: %s." % (
+                result.id_number, result.name, result.email, result.test_date, result.money_owed)
+        except queue.Empty:
+            continue 
 
 ##    # Give the workers some work to do
 ##    work_count = 0
@@ -92,6 +100,7 @@ if __name__ == '__main__':
 
 
 # Todo: write unit tests  
+
 
 
 
