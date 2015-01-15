@@ -3,6 +3,8 @@ import threading
 import gspread # Google Spreadsheets Python API
 import Queue as queue # Synchronized, multi-producer, multi-consumer queues
 
+import event
+
 COL_NAME = 1
 COL_TEST_DATE = 2
 COL_EMAIL= 4
@@ -16,20 +18,26 @@ class ShopUserDatabase():
         self.event_q = event_q
         self.googleAccount =gspread.login(
             'hmc.machine.shop@gmail.com', 'orangecow')
-        self.worksheet = self.googleAccount.open("Shop Users").worksheet("Sorted")
+        self.worksheet = self.googleAccount.open("Python Testing").worksheet("Sorted")
 
     def getShopUser(self, id_number):
-        idnum = self.worksheet.find(id_number)
-        row = idnum.row
+        user
+        try:
+            idnum = self.worksheet.find(id_number)
+            row = idnum.row
 
-        name = self.worksheet.cell(row, COL_NAME).value
-        email = self.worksheet.cell(row, COL_EMAIL).value
-        test_date = self.worksheet.cell(row, COL_TEST_DATE).value
-        money_owed = self.worksheet.cell(row, COL_MONEY_OWED).value
-        proctor = (self.worksheet.cell(row, COL_PROCTOR).value == "Yes")
+            name = self.worksheet.cell(row, COL_NAME).value
+            email = self.worksheet.cell(row, COL_EMAIL).value
+            test_date = self.worksheet.cell(row, COL_TEST_DATE).value
+            money_owed = self.worksheet.cell(row, COL_MONEY_OWED).value
+            proctor = (self.worksheet.cell(row, COL_PROCTOR).value == "Yes")
 
-        user = ShopUser(id_number, name, email, test_date, money_owed, proctor)
-        self.event_q.put(("swipe", user))
+            user = ShopUser(id_number, name, email, test_date, money_owed, proctor)
+        except gspread.GSpreadException:
+            user = ShopUser(id_number, "Unauthorized")
+    
+        card_swipe_event = event.CardSwipeEvent(user)
+        self.event_q.put(card_swipe_event)
 
 class ShopUser():
     """ Encapsulates all data and operations on a shop user

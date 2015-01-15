@@ -4,8 +4,9 @@ class Shop():
     """ Encapsulates all data and operations on the shop.
     """
     def __init__(self,
-                 state = "closed",
+                 open = False,
                  pod_list = [shop_user.ShopUser()]):
-        self.state = state
+        self.open = open
         self.pod_list = pod_list
-        print self.pod_list
+
+

@@ -28,8 +28,11 @@ def OnKeyboardEvent(event):
     return True
 
 def getShopUser(idNumber):
-    shopUser = worksheet.find(idNumber)
-    shopUserName = worksheet.cell(shopUser.row, shopUser.col - 1).value
+    try:
+        shopUser = worksheet.find(idNumber)
+        shopUserName = worksheet.cell(shopUser.row, shopUser.col - 1).value
+    except gspread.GSpreadException:
+        shopUserName = "Err"
     print shopUserName
 
 def addCharToBuffer(char):
