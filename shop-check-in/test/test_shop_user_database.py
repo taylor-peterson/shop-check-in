@@ -1,6 +1,7 @@
 import Queue as queue
 
 import shop_user
+import shop_user_database
 
 REAL_USER_ROW = 7
 REAL_USER_ID = "7777777"
@@ -19,7 +20,7 @@ class TestShopUserDatabase:
 
     def setup_method(self, method):
         event_q = queue.Queue()
-        shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
         
         #try: except?
         # TODO: add missing column data. 
@@ -34,7 +35,7 @@ class TestShopUserDatabase:
 
     def test_get_real_user(self):
         event_q = queue.Queue()
-        shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
 
         shop_user_database.getShopUser(REAL_USER_ID)
         user = event_q.get().data
@@ -42,14 +43,14 @@ class TestShopUserDatabase:
 
     def test_get_nonexistent_user(self):
         event_q = queue.Queue()
-        shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
         
         shop_user_database.getShopUser(FAKE_USER_ID)
         assert event_q.get().data.name == UNAUTHORIZED
 
     def test_increase_debt(self):
         event_q = queue.Queue()
-        shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
 
         shop_user_database.getShopUser(REAL_USER_ID)
         user = event_q.get().data
@@ -60,7 +61,7 @@ class TestShopUserDatabase:
 
     def test_clear_debt(self):
         event_q = queue.Queue()
-        shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
 
         shop_user_database.getShopUser(REAL_USER_ID)
         user = event_q.get().data

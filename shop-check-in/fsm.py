@@ -5,6 +5,7 @@ import winsound
 
 import id_logger
 import shop_user
+import shop_user_database
 import shop
 import event
 import error_handler
@@ -113,7 +114,6 @@ class BoardFsm():
 
     def opening_process_switch_flip(self, ignored_event_data, pod):
         self.shop.open_()
-        # TODO: log event
         # TODO: old-school mac startup sound
         return (STANDBY, None)
 
