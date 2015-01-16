@@ -26,9 +26,9 @@ class BoardFsm():
 
     def __init__(self, event_q, shop_user_database):
         self.state = CLOSED
-        self.shop = shop.Shop()
+        self.shop = shop.Shop(shop_user_database)
+        self.shop_user_database = shop_user_database # TODO: should this class have this?
         self.event_q = event_q
-        self.shop_user_database = shop_user_database
         self._error_handler = error_handler.ErrorHandler(event_q)
 
         self.state_data = {
@@ -61,7 +61,7 @@ class BoardFsm():
 
             REMOVING_USER : ("Removing user(s).\n\rreinsert or insert card; or press clear or charge.",
                              {event.CARD_INSERT : self.removing_user_process_slot,
-                              event.BUTTON_CLEAR_USER : self.removing_user_process_clear,
+                              event.BUTTON_DISCHARGE_USER : self.removing_user_process_discharge,
                               event.BUTTON_MONEY : self.removing_user_process_charge}),
 
             CLEARING_DEBT : ("Clearing user debt.\n\rSwipe user card or BUTTON_CANCEL.",
@@ -80,111 +80,101 @@ class BoardFsm():
             print
             print self.state_data[self.state][MESSAGE]
             
-            new_event = self.event_q.get()
+            next_event = self.event_q.get()
 
-            if new_event.key == event.TERMINATE_PROGRAM:
+            if next_event.key == event.TERMINATE_PROGRAM:
                 return self.state
             
             try:
-                (self.state, cargo) = self.state_data[self.state][ACTIONS_DICT][new_event.key](new_event.data, cargo)
+                (self.state, cargo) = self.state_data[self.state][ACTIONS_DICT][next_event.key](next_event.data, cargo)
             except KeyError:
-                self.state = self._error_handler.handle_error(self.state, new_event.key)
+                self.state = self._error_handler.handle_error(self.state, next_event.key)
 
-    def closed_process_card_swipe(self, user, ignore_me):
-        if user.proctor:
-            return (OPENING, user)
-        else:
-            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignore_me)
-
-    def go_to_closed_state(self, ignore_me, ignore_me_too):
+    def go_to_closed_state(self, ignored_event_data, ignored_cargo):
         return (CLOSED, None)
 
-    def go_to_standby_state(self, ignore_me, ignore_me_too):
+    def go_to_standby_state(self, ignored_event_data, ignored_cargo):
         return (STANDBY, None)
 
-    def go_to_remove_user_state(self, slot, ignore_me):
+    def go_to_remove_user_state(self, slot, ignored_cargo):
         return (REMOVING_USER, slot)
     
-    def go_to_clear_money_state(self, ignore_me, ignore_me_too):
+    def go_to_clear_money_state(self, ignored_event_data, ignored_cargo):
         return (CLEARING_DEBT, None)
 
-    def go_to_change_pod_state(self, ignore_me, ignore_me_too):
+    def go_to_change_pod_state(self, ignored_event_data, ignored_cargo):
         return (CHANGING_POD, None)
 
-    def opening_process_switch_flip(self, ignore_me, user):
-        self.shop.open = True
-        self.shop.pod_list.append(user)
+    def closed_process_card_swipe(self, user, ignored_cargo):
+        if user.is_proctor():
+            return (OPENING, user)
+        else:
+            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
+
+    def opening_process_switch_flip(self, ignored_event_data, pod):
+        self.shop.open_()
         # TODO: log event
         # TODO: old-school mac startup sound
         return (STANDBY, None)
 
-    def standby_process_card_swipe(self, user, ignore_me):
-        if user in self.shop.pod_list:
+    def standby_process_card_swipe(self, user, ignored_cargo):
+        if shop.is_pod(user):
             return (UNLOCKED, None)
         else:
-            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignore_me)
+            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
 
-    def unlocked_process_card_swipe(self, user, ignore_me):
-        if user.name == shop_user.UNAUTHORIZED:
-            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignore_me)
-        else:
+    def unlocked_process_card_swipe(self, user, ignored_cargo):
+        if user.is_shop_certified():
             return (ADDING_USER, user)
-
-    def unlocked_process_closing_shop(self, ignore_me, ignore_me_too):
-        if shop.empty():
-            self.shop.pod_list.clear()
-            return (CLOSED, Null)
         else:
-            return (self._error_handler.handle_error(self.state, "shop_occupied"), ignore_me)
+            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
+
+    def unlocked_process_closing_shop(self, ignored_event_data, ignore_me_too):
+        try:
+            shop.close_()
+            return (CLOSED, Null)
+        except:
+            return (self._error_handler.handle_error(self.state, "shop_occupied"), ignored_cargo)
 
     def adding_user_process_card_swipe(self, second_user, first_user):
-        if second_user.name == shop_user.UNAUTHORIZED:
-            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), first_user)
-        else:
+        if second_user.is_shop_certified():
             return (ADDING_USERS, [first_user, second_user])
+        else:
+            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), first_user)
 
-    def adding_user_s_process_slot(self, slot, users):
-        self.shop.occupants[slot].append(users)
+    def adding_user_s_process_slot(self, slot, user_s):
+        self.shop.add_user_s_to_slot(user_s, slot)
         return (STANDBY, None)
 
     def removing_user_process_slot(self, slot, prev_slot):
-        if slot != prev_slot:
-            self.shop.occupants[slot] = self.shop.occupants[prev_slot]
-            self.shop.occupants[prev_slot] = []
-
+        self.shop.replace_or_transfer_user(slot, prev_slot)
         return (STANDBY, None)
         
-    def removing_user_process_clear(self, ignore_me, slot):
-        self.shop.occupants[slot] = []
+    def removing_user_process_discharge(self, ignored_event_data, slot):
+        self.shop.discharge_user_s(slot)
         return (STANDBY, None)
 
-    def removing_user_process_charge(self, ignore_me, slot):
-        users = self.shop.occupants[slot]
-        for user in users:
-            self.shop_user_database.increase_debt(user)
-        # sad trombone
+    def removing_user_process_charge(self, ignored_event_data, slot):
+        self.shop.charge_user_s(slot)
+        # TODO: sad trombone
         return (STANDBY, None)
 
-    def clearing_debt_process_card_swipe(self, user, ignore_me):
-        #cha-ching
-        
-        if user.name == shop_user.UNAUTHORIZED:
-            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignore_me)
-        else:
+    def clearing_debt_process_card_swipe(self, user, ignored_cargo):       
+        if user.is_shop_certified():
             self.shop_user_database.clear_debt(user)
+            # TODO: cha-ching
             return (STANDBY, user)
-
-    def changing_pod_process_card_swipe(self, user, ignore_me):
-        if user.proctor and not user in self.shop.pod_list:
-            self.shop.pod_list.append(user)
-            return (STANDBY, None)
-        elif user in self.shop.pod_list and len(self.shop.pod_list) > 1:
-            self.shop.pod_list.remove(user)
-            return (STANDBY, None)
-        elif user.proctor:
-            return (self._error_handler.handle_error(self.state, "pod_required"), ignore_me)
         else:
-            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignore_me)
+            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
+
+    def changing_pod_process_card_swipe(self, user, ignored_cargo):
+        try:
+            self.shop.change_pod(user)
+            return (STANDBY, None)
+        except: # requires at least one proctor
+            return (self._error_handler.handle_error(self.state, "pod_required"), ignored_cargo)
+        except: #invalid user
+            return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
 
 def main():
     # Create a single input and a single output queue for all threads.

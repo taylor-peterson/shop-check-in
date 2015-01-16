@@ -9,7 +9,7 @@ BUTTON_CANCEL = "cancel"
 BUTTON_CONFIRM = "confirm"
 BUTTON_MONEY = "money"
 BUTTON_CHANGE_POD = "change_pod"
-BUTTON_CLEAR_USER = "clear_user"
+BUTTON_DISCHARGE_USER = "discharge_user"
 
 TERMINATE_PROGRAM = "halt"
 

@@ -1,5 +1,4 @@
 import Queue as queue
-import threading
 
 import id_logger
 import shop_user
@@ -30,9 +29,78 @@ BUTTON_CLEAR_USER = event.Event(event.BUTTON_CLEAR_USER, "")
 
 TERMINATE_PROGRAM = event.Event(event.TERMINATE_PROGRAM)
 
-# TODO: eliminate dependency on database spinup to cut down on test time. 
+class TestFsmDataOperations:
 
-class TestFsm:
+    def test_opening_process_switch_flip(self):
+        pass
+        # should be the proctor on duty
+        # log should have correct information
+
+    def test_unlocked_process_closing_shop_success(self):
+        pass
+        # should be no pod
+        # log should have correct info
+
+    def test_unlocked_process_closing_shop_failure(self):
+        pass
+        # should still be pod
+        # should be at least one user in shop
+        # log should have correct info
+
+    def test_adding_user_s_process_slot_one_user(self):
+        pass
+        # should have a user in the correct slot
+        # log should have correct info
+
+    def test_adding_user_s_process_slot_two_users(self):
+        pass
+        # should have two users in the correct slot
+        # log should have correct info
+
+    def test_removing_user_process_slot_reinsert_user(self):
+        pass
+        # shop state should not change
+        # log should have correct info
+
+    def test_removing_user_process_slot_transfer_user(self):
+        pass
+        # should have user(s) transfered to new slot
+        # log should have correct info
+
+    def test_removing_using_process_discharge(self):
+        pass
+        # should empty slot
+        # log should have correct info
+
+    def test_clearing_debt_process_card_swipe_single_user(self):
+        pass
+        # user debt should increase by fixed amount
+        # log should have correct info
+
+    def test_clearing_debt_process_card_swipe_two_users(self):
+        pass
+        # both user debts should increase by fixed amount
+        # log should have correct info
+
+    def test_clearing_debt_process_card_swipe(self):
+        pass
+        # user debt should be zeroed
+        # log should have correct info
+
+    def test_changing_pod_process_add_pod(self):
+        pass
+        # should be an additional pod
+        # log should have correct info
+
+    def test_changing_pod_process_remove_pod_success(self):
+        pass
+        # should remove correct proctor
+        # log should have correct info
+
+    # have to add check to make sure user has no debt and is
+    #certified before letting them work
+
+class TestFsmStateTransitions:
 
     def test_closed_invalid_events(self):
         event_q = queue.Queue()

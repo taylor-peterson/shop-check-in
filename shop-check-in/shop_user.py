@@ -13,8 +13,8 @@ COL_PROCTOR = 7
 UNAUTHORIZED = "unauthorized_user"
 
 class ShopUser():
-    """ A struct to store a shop user's data.
-        Note that all actions on shop users must go through the database.
+    """ Stores and processes a shop user's data.
+        Note that all changes to shop users must go through the database.
     """
     def __init__(self,
                  id_number = 0,
@@ -29,6 +29,17 @@ class ShopUser():
         self.test_date = test_date
         self.debt = debt
         self.proctor = proctor
+
+    def is_shop_certified(self):
+        # name not UNAUTHORIZED and self.has_valid_safety_test()
+        return True
+
+    def is_proctor(self):
+        return self.is_shop_certified() and self.proctor
+
+    def has_valid_safety_test(self):
+        # passed in last year
+        return True
 
         
 # TODO: make this work without internet or at least fail gracefully. 
