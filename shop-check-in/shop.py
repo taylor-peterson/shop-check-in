@@ -21,7 +21,7 @@ class Shop:
         if self._empty():
             self.pod_list.clear()
         else:
-            # throw shop_not_empty error
+            raise ShopOccupiedError
     
     def is_pod(self, pod):
         return pod in self.pod_list
@@ -48,9 +48,13 @@ class Shop:
         elif self.is_pod(user) and len(self.pod_list) > 1:
             self.pod_list.remove(user)
         elif self.is_pod(user):
-            # throw need at least one proctor error
+            raise PodRequiredError
         else:
-            # throw invalid user error
+            raise UnauthorizedUserError
 
     def _empty(self):
         return self.occupants == [None]*30
+
+class ShopOccupiedError(Exception): pass
+class PodRequiredError(Exception): pass
+class UnauthorizedUserError(Exception): pass

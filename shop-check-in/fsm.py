@@ -134,9 +134,10 @@ class BoardFsm():
     def unlocked_process_closing_shop(self, ignored_event_data, ignore_me_too):
         try:
             shop.close_()
-            return (CLOSED, Null)
-        except:
+        except shop.ShopOccupiedError:
             return (self._error_handler.handle_error(self.state, "shop_occupied"), ignored_cargo)
+        else:
+            return (CLOSED, Null)
 
     def adding_user_process_card_swipe(self, second_user, first_user):
         if second_user.is_shop_certified():
@@ -164,29 +165,30 @@ class BoardFsm():
     def clearing_debt_process_card_swipe(self, user, ignored_cargo):       
         try:
             self.shop_user_database.clear_debt(user)
-            # TODO: cha-ching
-            return (STANDBY, user)
         except:
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
+        else:
+            # TODO: cha-ching
+            return (STANDBY, user)
 
     def changing_pod_process_card_swipe(self, user, ignored_cargo):
         try:
             self.shop.change_pod(user)
-            return (STANDBY, None)
-        except: # requires at least one proctor
+        except shop.PodRequiredError:
             return (self._error_handler.handle_error(self.state, "pod_required"), ignored_cargo)
-        except: #invalid user
+        except shop.UnauthorizedUserError:
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
+        else:
+            return (STANDBY, None)
 
 def main():
-    # Create a single input and a single output queue for all threads.
     dir_q = queue.Queue()
     event_q = queue.Queue()
 
-    shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
-    board = BoardFsm(event_q, shop_user_database)
+    shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+    board = BoardFsm(event_q, shop_user_db)
 
-    thread = id_logger.IdLogger(shop_user_database)
+    thread = id_logger.IdLogger(shop_user_db)
     thread.start()
 
     while True:
