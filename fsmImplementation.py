@@ -24,10 +24,11 @@ CHANGING_POD = "changing pod"
 
 class BoardFsm():
 
-    def __init__(self, event_q):
+    def __init__(self, event_q, shop_user_database):
         self.state = CLOSED
         self.shop = shop.Shop()
         self.event_q = event_q
+        self.shop_user_database = shop_user_database
         self._error_handler = error_handler.ErrorHandler(event_q)
 
         self.state_data = {
@@ -111,6 +112,7 @@ class BoardFsm():
 
     def unlocked_process_closing_shop(self, ignore_me, ignore_me_too):
         if shop.empty():
+            self.shop.pod_list.clear()
             return (CLOSED, Null)
         else:
             return (self._error_handler.handle_error(self.state, "shop_occupied"), ignore_me)
@@ -137,16 +139,19 @@ class BoardFsm():
         return (STANDBY, None)
 
     def removing_user_process_charge(self, slot, ignore_me):
-        # add money owed to user account
+        users = shop.occupants[slot]
+        for user in users:
+            self.shop_user_database.increase_debt(user)
         # sad trombone
         return (STANDBY, None)
 
     def clearing_debt_process_card_swipe(self, user, ignore_me):
         #cha-ching
-        #clear user account
+        
         if user.name == shop_user.UNAUTHORIZED:
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignore_me)
         else:
+            self.shop_user_database.clear_debt(user)
             return (STANDBY, user)
 
     def changing_pod_process_card_swipe(self, user, ignore_me):
@@ -184,8 +189,8 @@ def main():
     dir_q = queue.Queue()
     event_q = queue.Queue()
 
-    shop_user_database = shop_user.ShopUserDatabase(event_q)
-    board = BoardFsm(event_q)
+    shop_user_database = shop_user.ShopUserDatabase(event_q, "Python Testing")
+    board = BoardFsm(event_q, shop_user_database)
 
     thread = id_logger.IdLogger(shop_user_database)
     thread.start()
