@@ -1,6 +1,7 @@
 import shop_user
 
-class Shop():
+# Add check for valid slot and other inputs
+class Shop:
     """ Encapsulates all data and operations on the shop.
     """
     def __init__(self,

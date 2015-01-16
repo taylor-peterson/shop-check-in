@@ -63,6 +63,8 @@ class ShopUserDatabase():
 
         return user
 
+# if the actual class can't work without internet, make this
+# work on a local copy of the spreadsheet
 class ShopUserDatabaseSpoof(ShopUserDatabase):
     ''' For testing purposes only.
         Having this allows for quicker tests by avoiding the need to

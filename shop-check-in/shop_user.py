@@ -1,12 +1,12 @@
 UNAUTHORIZED = "unauthorized_user"
 
-class ShopUser():
+class ShopUser:
     """ Stores and processes a shop user's data.
         Note that all changes to shop users must go through the database.
     """
     def __init__(self,
                  id_number = 0,
-                 name = "null",
+                 name = UNAUTHORIZED,
                  email = "null",
                  test_date = 0,
                  debt = 0,

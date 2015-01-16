@@ -3,12 +3,12 @@ import Queue as queue
 
 import winsound
 
+import error_handler
+import event
 import id_logger
+import shop
 import shop_user
 import shop_user_database
-import shop
-import event
-import error_handler
 
 MESSAGE = 0
 ACTIONS_DICT = 1
@@ -28,22 +28,22 @@ class BoardFsm():
     def __init__(self, event_q, shop_user_database):
         self.state = CLOSED
         self.shop = shop.Shop(shop_user_database)
-        self.shop_user_database = shop_user_database # TODO: should this class have this?
+        self.shop_user_database = shop_user_database
         self.event_q = event_q
         self._error_handler = error_handler.ErrorHandler(event_q)
 
         self.state_data = {
-            CLOSED : ("Shop closed.\nProctor swipe to open.",
+            CLOSED : ("\nShop closed.\nProctor swipe to open.",
                       {event.CARD_SWIPE : self.closed_process_card_swipe}),
             
-            OPENING : ("Starting up!\n\rType BUTTON_CANCEL or flip_switch_off.",
+            OPENING : ("\nStarting up!\n\rType BUTTON_CANCEL or flip_switch_off.",
                        {event.BUTTON_CANCEL : self.go_to_closed_state,
                         event.SWITCH_FLIP_OFF : self.opening_process_switch_flip}),
 
-            STANDBY : ("Shop open. Board locked\n\rPOD swipe to unlock.",
+            STANDBY : ("\nShop open. Board locked\n\rPOD swipe to unlock.",
                       {event.CARD_SWIPE : self.standby_process_card_swipe}),
 
-            UNLOCKED : ("Board Unlcked.\n\rAll inputs available.",
+            UNLOCKED : ("\nBoard Unlcked.\n\rAll inputs available.",
                         {event.BUTTON_CANCEL : self.go_to_standby_state,
                          event.CARD_SWIPE : self.unlocked_process_card_swipe,
                          event.CARD_REMOVE : self.go_to_remove_user_state,
@@ -51,25 +51,25 @@ class BoardFsm():
                          event.BUTTON_CHANGE_POD : self.go_to_change_pod_state,
                          event.SWITCH_FLIP_ON : self.unlocked_process_closing_shop}),
 
-            ADDING_USER : ("Adding user.\n\rSwipe another card, insert into slot, or BUTTON_CANCEL.",
+            ADDING_USER : ("\nAdding user.\n\rSwipe another card, insert into slot, or BUTTON_CANCEL.",
                            {event.CARD_SWIPE : self.adding_user_process_card_swipe,
                             event.CARD_INSERT : self.adding_user_s_process_slot,
                             event.BUTTON_CANCEL : self.go_to_standby_state}),
 
-            ADDING_USERS : ("Adding users.\n\rInsert both cards into slot or BUTTON_CANCEL.",
+            ADDING_USERS : ("\nAdding users.\n\rInsert both cards into slot or BUTTON_CANCEL.",
                             {event.CARD_INSERT : self.adding_user_s_process_slot,
                              event.BUTTON_CANCEL : self.go_to_standby_state}),
 
-            REMOVING_USER : ("Removing user(s).\n\rreinsert or insert card; or press clear or charge.",
+            REMOVING_USER : ("\nRemoving user(s).\n\rreinsert or insert card; or press clear or charge.",
                              {event.CARD_INSERT : self.removing_user_process_slot,
                               event.BUTTON_DISCHARGE_USER : self.removing_user_process_discharge,
                               event.BUTTON_MONEY : self.removing_user_process_charge}),
 
-            CLEARING_DEBT : ("Clearing user debt.\n\rSwipe user card or BUTTON_CANCEL.",
+            CLEARING_DEBT : ("\nClearing user debt.\n\rSwipe user card or BUTTON_CANCEL.",
                              {event.CARD_SWIPE : self.clearing_debt_process_card_swipe,
                               event.BUTTON_CANCEL : self.go_to_standby_state}),
 
-            CHANGING_POD : ("Changing POD status.\n\rSwipe proctor card or BUTTON_CANCEL.",
+            CHANGING_POD : ("\nChanging POD status.\n\rSwipe proctor card or BUTTON_CANCEL.",
                             {event.CARD_SWIPE : self.changing_pod_process_card_swipe,
                              event.BUTTON_CANCEL : self.go_to_standby_state}),
             }
@@ -78,8 +78,10 @@ class BoardFsm():
         cargo = None
         
         while True:
-            print
-            print self.state_data[self.state][MESSAGE]
+            state_message = self.state_data[self.state][MESSAGE]
+            state_action_dict = self.state_data[self.state][ACTIONS_DICT]
+            
+            print state_message
             
             next_event = self.event_q.get()
 
@@ -87,7 +89,7 @@ class BoardFsm():
                 return self.state
             
             try:
-                (self.state, cargo) = self.state_data[self.state][ACTIONS_DICT][next_event.key](next_event.data, cargo)
+                (self.state, cargo) = state_action_dict[next_event.key](next_event.data, cargo)
             except KeyError:
                 self.state = self._error_handler.handle_error(self.state, next_event.key)
 
@@ -160,11 +162,11 @@ class BoardFsm():
         return (STANDBY, None)
 
     def clearing_debt_process_card_swipe(self, user, ignored_cargo):       
-        if user.is_shop_certified():
+        try:
             self.shop_user_database.clear_debt(user)
             # TODO: cha-ching
             return (STANDBY, user)
-        else:
+        except:
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
 
     def changing_pod_process_card_swipe(self, user, ignored_cargo):

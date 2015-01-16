@@ -48,7 +48,7 @@ class TestShopUserDatabase:
         shop_user_database.getShopUser(FAKE_USER_ID)
         assert event_q.get().data.name == UNAUTHORIZED
 
-    def test_increase_debt(self):
+    def test_increase_debt_success(self):
         event_q = queue.Queue()
         shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
 
@@ -59,7 +59,10 @@ class TestShopUserDatabase:
         user = shop_user_database.increase_debt(user)
         assert user_debt == user.debt
 
-    def test_clear_debt(self):
+    def test_increase_debt_failure(self):
+        assert True == False
+
+    def test_clear_debt_success(self):
         event_q = queue.Queue()
         shop_user_database = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
 
@@ -68,3 +71,6 @@ class TestShopUserDatabase:
 
         user = shop_user_database.clear_debt(user)
         assert user.debt == 0
+
+    def test_clear_debt_failure(self):
+        assert True == False

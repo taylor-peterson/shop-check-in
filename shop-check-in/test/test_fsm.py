@@ -32,68 +32,68 @@ TERMINATE_PROGRAM = event.Event(event.TERMINATE_PROGRAM)
 class TestFsmDataOperations:
 
     def test_opening_process_switch_flip(self):
-        pass
+        assert True == False
         # should be the proctor on duty
         # log should have correct information
 
     def test_unlocked_process_closing_shop_success(self):
-        pass
+        assert True == False
         # should be no pod
         # log should have correct info
 
     def test_unlocked_process_closing_shop_failure(self):
-        pass
+        assert True == False
         # should still be pod
         # should be at least one user in shop
         # log should have correct info
 
     def test_adding_user_s_process_slot_one_user(self):
-        pass
+        assert True == False
         # should have a user in the correct slot
         # log should have correct info
 
     def test_adding_user_s_process_slot_two_users(self):
-        pass
+        assert True == False
         # should have two users in the correct slot
         # log should have correct info
 
     def test_removing_user_process_slot_reinsert_user(self):
-        pass
+        assert True == False
         # shop state should not change
         # log should have correct info
 
     def test_removing_user_process_slot_transfer_user(self):
-        pass
+        assert True == False
         # should have user(s) transfered to new slot
         # log should have correct info
 
     def test_removing_using_process_discharge(self):
-        pass
+        assert True == False
         # should empty slot
         # log should have correct info
 
     def test_clearing_debt_process_card_swipe_single_user(self):
-        pass
+        assert True == False
         # user debt should increase by fixed amount
         # log should have correct info
 
     def test_clearing_debt_process_card_swipe_two_users(self):
-        pass
+        assert True == False
         # both user debts should increase by fixed amount
         # log should have correct info
 
     def test_clearing_debt_process_card_swipe(self):
-        pass
+        assert True == False
         # user debt should be zeroed
         # log should have correct info
 
     def test_changing_pod_process_add_pod(self):
-        pass
+        assert True == False
         # should be an additional pod
         # log should have correct info
 
     def test_changing_pod_process_remove_pod_success(self):
-        pass
+        assert True == False
         # should remove correct proctor
         # log should have correct info
 
