@@ -1,5 +1,3 @@
-import threading
-
 import gspread # Google Spreadsheets Python API
 import Queue as queue # Synchronized, multi-producer, multi-consumer queues
 
@@ -14,6 +12,26 @@ COL_PROCTOR = 7
 
 UNAUTHORIZED = "unauthorized_user"
 
+class ShopUser():
+    """ A struct to store a shop user's data.
+        Note that all actions on shop users must go through the database.
+    """
+    def __init__(self,
+                 id_number = 0,
+                 name = "null",
+                 email = "null",
+                 test_date = 0,
+                 debt = 0,
+                 proctor = False):
+        self.id_number = id_number
+        self.name = name
+        self.email = email
+        self.test_date = test_date
+        self.debt = debt
+        self.proctor = proctor
+
+        
+# TODO: make this work without internet or at least fail gracefully. 
 class ShopUserDatabase():
     """ Interface for Google Spreadsheets. 
     """
@@ -66,84 +84,20 @@ class ShopUserDatabase():
 
         return user
 
-        
+class ShopUserDatabaseSpoof(ShopUserDatabase):
+    ''' For testing purposes only.
+        Having this allows for quicker tests by avoiding the need to
+        unnecessarily connect to Google Drive.
+    '''
 
-class ShopUser():
-    """ A struct to store a shop user's data.
-        Note that all actions on shop users must go through the database.
-    """
-    def __init__(self,
-                 id_number = 0,
-                 name = "null",
-                 email = "null",
-                 test_date = 0,
-                 debt = 0,
-                 proctor = False):
-        self.id_number = id_number
-        self.name = name
-        self.email = email
-        self.test_date = test_date
-        self.debt = debt
-        self.proctor = proctor
+    def __init__(self):
+        pass
 
+    def getShopUser(self, id_number):
+        pass
 
+    def increase_debt(self, user):
+        pass
 
-REAL_USER_ROW = 7
-REAL_USER_ID = "7777777"
-REAL_USER_NAME = "Testy the Testee"
-REAL_USER_DEBT = 3
-
-FAKE_USER_ROW = 6
-FAKE_USER_ID = "666"
-
-class TestShopUserDatabase:
-
-    def setup_method(self, method):
-        event_q = queue.Queue()
-        shop_user_database = ShopUserDatabase(event_q, "Python Testing")
-        
-        #try: except?
-        shop_user_database.worksheet.update_cell(REAL_USER_ROW, COL_ID, REAL_USER_ID)
-        shop_user_database.worksheet.update_cell(REAL_USER_ROW, COL_NAME, REAL_USER_NAME)
-        shop_user_database.worksheet.update_cell(REAL_USER_ROW, COL_DEBT, REAL_USER_DEBT)
-
-        # add check to make sure fake person isn't there
-        # self.worksheet.find(FAKE_USER_ID)
-
-        # make the above series of updates run as one operation
-
-    def test_get_real_user(self):
-        event_q = queue.Queue()
-        shop_user_database = ShopUserDatabase(event_q, "Python Testing")
-
-        shop_user_database.getShopUser(REAL_USER_ID)
-        user = event_q.get().data
-        assert user.name == REAL_USER_NAME
-
-    def test_get_nonexistent_user(self):
-        event_q = queue.Queue()
-        shop_user_database = ShopUserDatabase(event_q, "Python Testing")
-        
-        shop_user_database.getShopUser(FAKE_USER_ID)
-        assert event_q.get().data.name == UNAUTHORIZED
-
-    def test_increase_debt(self):
-        event_q = queue.Queue()
-        shop_user_database = ShopUserDatabase(event_q, "Python Testing")
-
-        shop_user_database.getShopUser(REAL_USER_ID)
-        user = event_q.get().data
-
-        user_debt = user.debt + 3
-        user = shop_user_database.increase_debt(user)
-        assert user_debt == user.debt
-
-    def test_clear_debt(self):
-        event_q = queue.Queue()
-        shop_user_database = ShopUserDatabase(event_q, "Python Testing")
-
-        shop_user_database.getShopUser(REAL_USER_ID)
-        user = event_q.get().data
-
-        user = shop_user_database.clear_debt(user)
-        assert user.debt == 0
+    def clear_debt(self, user):
+        pass
