@@ -11,6 +11,8 @@ COL_EMAIL= 4
 COL_MONEY_OWED = 6
 COL_PROCTOR = 7
 
+UNAUTHORIZED = "unauthorized_user"
+
 class ShopUserDatabase():
     """ Wrapper for getting data from the Google Spreadsheets Python API
     """
@@ -18,10 +20,10 @@ class ShopUserDatabase():
         self.event_q = event_q
         self.googleAccount =gspread.login(
             'hmc.machine.shop@gmail.com', 'orangecow')
-        self.worksheet = self.googleAccount.open("Python Testing").worksheet("Sorted")
+        self.worksheet = self.googleAccount.open("Shop Users").worksheet("Sorted")
 
     def getShopUser(self, id_number):
-        user
+        user = ShopUser(id_number, UNAUTHORIZED)
         try:
             idnum = self.worksheet.find(id_number)
             row = idnum.row
@@ -34,9 +36,9 @@ class ShopUserDatabase():
 
             user = ShopUser(id_number, name, email, test_date, money_owed, proctor)
         except gspread.GSpreadException:
-            user = ShopUser(id_number, "Unauthorized")
+            pass
     
-        card_swipe_event = event.CardSwipeEvent(user)
+        card_swipe_event = event.Event(event.CARD_SWIPE, user)
         self.event_q.put(card_swipe_event)
 
 class ShopUser():
