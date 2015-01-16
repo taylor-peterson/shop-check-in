@@ -15,7 +15,7 @@ COL_PROCTOR = 7
 UNAUTHORIZED = "unauthorized_user"
 
 class ShopUserDatabase():
-    """ Wrapper for getting data from the Google Spreadsheets Python API
+    """ Interface for Google Spreadsheets. 
     """
     def __init__(self, event_q, spreadsheet = "Shop Users"):
         self.event_q = event_q
@@ -85,6 +85,8 @@ class ShopUser():
         self.test_date = test_date
         self.debt = debt
         self.proctor = proctor
+
+
 
 REAL_USER_ROW = 7
 REAL_USER_ID = "7777777"
