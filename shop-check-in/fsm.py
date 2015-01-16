@@ -3,11 +3,11 @@ import Queue as queue
 
 import winsound
 
-import Application.id_logger as id_logger
-import Application.shop_user as shop_user
-import Application.shop as shop
-import Application.event as event
-import Application.error_handler as error_handler
+import id_logger
+import shop_user
+import shop
+import event
+import error_handler
 
 MESSAGE = 0
 ACTIONS_DICT = 1
@@ -158,8 +158,8 @@ class BoardFsm():
         self.shop.occupants[slot] = []
         return (STANDBY, None)
 
-    def removing_user_process_charge(self, slot, ignore_me):
-        users = shop.occupants[slot]
+    def removing_user_process_charge(self, ignore_me, slot):
+        users = self.shop.occupants[slot]
         for user in users:
             self.shop_user_database.increase_debt(user)
         # sad trombone
