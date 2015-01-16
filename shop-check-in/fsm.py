@@ -115,12 +115,12 @@ class BoardFsm():
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
 
     def opening_process_switch_flip(self, ignored_event_data, pod):
-        self.shop.open_()
+        self.shop.open_(pod)
         # TODO: old-school mac startup sound
         return (STANDBY, None)
 
     def standby_process_card_swipe(self, user, ignored_cargo):
-        if shop.is_pod(user):
+        if self.shop.is_pod(user):
             return (UNLOCKED, None)
         else:
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
@@ -133,7 +133,7 @@ class BoardFsm():
 
     def unlocked_process_closing_shop(self, ignored_event_data, ignore_me_too):
         try:
-            shop.close_()
+            self.shop.close_()
         except shop.ShopOccupiedError:
             return (self._error_handler.handle_error(self.state, "shop_occupied"), ignored_cargo)
         else:
@@ -164,10 +164,13 @@ class BoardFsm():
 
     def clearing_debt_process_card_swipe(self, user, ignored_cargo):       
         try:
+            print "trying to clear user"
             self.shop_user_database.clear_debt(user)
-        except:
+        except shop_user.UnauthorizedUserError:
+            print "failed"
             return (self._error_handler.handle_error(self.state, shop_user.UNAUTHORIZED), ignored_cargo)
         else:
+            print "succeeded"
             # TODO: cha-ching
             return (STANDBY, user)
 

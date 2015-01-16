@@ -2,6 +2,7 @@ import gspread # Google Spreadsheets Python API
 import Queue as queue # Synchronized, multi-producer, multi-consumer queues
 
 import event
+import shop_user
 
 COL_NAME = 1
 COL_TEST_DATE = 2
@@ -10,7 +11,8 @@ COL_ID = 5
 COL_DEBT = 6
 COL_PROCTOR = 7
 
-# TODO: make this work without internet or at least fail gracefully. 
+# TODO: make this work without internet or at least fail gracefully.
+# TODO: error handling on inputs
 class ShopUserDatabase():
     """ Interface for Google Spreadsheets. 
     """
@@ -47,7 +49,7 @@ class ShopUserDatabase():
             user.debt += 3
             self.worksheet.update_cell(row, COL_DEBT, user.debt)
         except gspread.GSpreadException:
-            user = ShopUser(id_number, UNAUTHORIZED)
+            raise shop_user.UnauthorizedUserError
 
         return user
 
@@ -59,7 +61,7 @@ class ShopUserDatabase():
             user.debt = 0
             self.worksheet.update_cell(row, COL_DEBT, user.debt)
         except gspread.GSpreadException:
-            user = ShopUser(id_number, UNAUTHORIZED)
+            raise shop_user.UnauthorizedUserError
 
         return user
 

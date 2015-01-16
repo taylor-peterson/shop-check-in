@@ -28,5 +28,5 @@ class ShopUser:
         # passed in last year
         return True
 
-        
 
+class UnauthorizedUserError(Exception): pass

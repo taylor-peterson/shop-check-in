@@ -4,7 +4,7 @@ class TestShopUser:
 
     def test_is_shop_certified_unauthorized(self):
         user = shop_user.ShopUser()
-        assert shop_user.is_shop_certified(user) == False
+        assert user.is_shop_certified() == False
 
     def test_is_shop_certified_invalid_test(self):
         assert True == False

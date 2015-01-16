@@ -15,7 +15,7 @@ class Shop:
 
     def open_(self, pod):
         self.open = True
-        self.shop.pod_list.append(pod)
+        self.pod_list.append(pod)
 
     def close_(self):
         if self._empty():
@@ -29,20 +29,20 @@ class Shop:
     def add_user_s_to_slot(self, user_s, slot):
         self.occupants[slot].append(user_s)
 
-    def replace_or_transfer_user(slot, prev_slot):
+    def replace_or_transfer_user(self, slot, prev_slot):
         if slot != prev_slot:
             self.occupants[slot] = self.shop.occupants[prev_slot]
             self.occupants[prev_slot] = []
 
-    def discharge_user_s(slot):
-        self.shop.occupants[slot] = []
+    def discharge_user_s(self, slot):
+        self.occupants[slot] = []
 
-    def charge_user_s(slot):
+    def charge_user_s(self, slot):
         users = self.occupants[slot]
         for user in users:
             self.shop_user_database.increase_debt(user)
 
-    def change_pod(user):
+    def change_pod(self, user):
         if user.is_proctor and not self.is_pod(user):
             self.pod_list.append(user)
         elif self.is_pod(user) and len(self.pod_list) > 1:
@@ -50,11 +50,10 @@ class Shop:
         elif self.is_pod(user):
             raise PodRequiredError
         else:
-            raise UnauthorizedUserError
+            raise shop_user.UnauthorizedUserError
 
     def _empty(self):
         return self.occupants == [None]*30
 
 class ShopOccupiedError(Exception): pass
 class PodRequiredError(Exception): pass
-class UnauthorizedUserError(Exception): pass
