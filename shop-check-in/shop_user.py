@@ -1,4 +1,10 @@
+import datetime
+
+from dateutil.relativedelta import relativedelta
+import dateutil.parser
+
 UNAUTHORIZED = "unauthorized_user"
+INVALID_TEST_DATE = dateutil.parser.parse("1970-03-22")
 
 class ShopUser:
     """ Stores and processes a shop user's data.
@@ -8,7 +14,7 @@ class ShopUser:
                  id_number = 0,
                  name = UNAUTHORIZED,
                  email = "null",
-                 test_date = 0,
+                 test_date = INVALID_TEST_DATE,
                  debt = 0,
                  proctor = False):
         self.id_number = id_number
@@ -25,8 +31,9 @@ class ShopUser:
         return self.is_shop_certified() and self.proctor
 
     def has_valid_safety_test(self):
-        # passed in last year
-        return True
+        today = datetime.date.today()
+        difference_in_years = relativedelta(today, self.test_date).years
+        return difference_in_years == 0
 
 
 class UnauthorizedUserError(Exception): pass

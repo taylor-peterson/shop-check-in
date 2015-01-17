@@ -1,5 +1,8 @@
 import gspread # Google Spreadsheets Python API
 import Queue as queue # Synchronized, multi-producer, multi-consumer queues
+import datetime
+
+import dateutil.parser
 
 import event
 import shop_user
@@ -30,9 +33,11 @@ class ShopUserDatabase():
 
             name = self.worksheet.cell(row, COL_NAME).value
             email = self.worksheet.cell(row, COL_EMAIL).value
-            test_date = self.worksheet.cell(row, COL_TEST_DATE).value
+            test_date_str = self.worksheet.cell(row, COL_TEST_DATE).value
             debt = int(float(self.worksheet.cell(row, COL_DEBT).value))
             proctor = (self.worksheet.cell(row, COL_PROCTOR).value == "Yes")
+
+            test_date = dateutil.parser.parse(test_date_str) # invalid date raises ValueError
 
             user = ShopUser(id_number, name, email, test_date, debt, proctor)
         except gspread.GSpreadException:
@@ -63,7 +68,7 @@ class ShopUserDatabase():
         except gspread.GSpreadException:
             raise shop_user.UnauthorizedUserError
 
-        return user
+        return user        
 
 # if the actual class can't work without internet, make this
 # work on a local copy of the spreadsheet
