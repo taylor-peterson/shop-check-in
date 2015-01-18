@@ -14,12 +14,14 @@ class Shop:
         self.occupants = [[] for num in range(30)]
 
     def open_(self, pod):
+        # add check for user being proctor and shop being closed
         self.open = True
         self.pod_list.append(pod)
 
     def close_(self):
         if self._empty():
-            self.pod_list.clear()
+            self.pod_list = [[] for num in range(30)] # make this more efficient by modifying the list itself?
+            self.open = False
         else:
             raise ShopOccupiedError
     
@@ -53,7 +55,7 @@ class Shop:
             raise shop_user.UnauthorizedUserError
 
     def _empty(self):
-        return self.occupants == [None]*30
+        return self.occupants == [[] for num in range(30)]
 
 class ShopOccupiedError(Exception): pass
 class PodRequiredError(Exception): pass

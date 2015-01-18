@@ -31,13 +31,35 @@ class TestShop:
             assert not machine_shop._empty()
             
     def test_close_success(self):
-        assert True == False
+        db = shop_user_database.ShopUserDatabaseSpoof()
+        machine_shop = shop.Shop(db)
+        user = shop_user.ShopUser()
+        machine_shop.open_(user)
+        machine_shop.close_()
+
+        assert not machine_shop.open
+        assert machine_shop._empty()
 
     def test_is_pod_failure(self):
-        assert True == False
+        db = shop_user_database.ShopUserDatabaseSpoof()
+        machine_shop = shop.Shop(db)
+        user = shop_user.ShopUser()
+        second_user = shop_user.ShopUser(40155181)
+        machine_shop.open_(user)
+
+        assert not machine_shop.is_pod(second_user)
 
     def test_is_pod_success(self):
-        assert True == False
+        db = shop_user_database.ShopUserDatabaseSpoof()
+        machine_shop = shop.Shop(db)
+        user = shop_user.ShopUser()
+        second_user = shop_user.ShopUser(40155181)
+        second_user.proctor = True
+        machine_shop.open_(user)
+        machine_shop.change_pod(second_user)
+
+        assert machine_shop.is_pod(user)
+        assert machine_shop.is_pod(second_user)
 
     def test_add_user_s_to_slot_single_user(self):
         assert True == False
