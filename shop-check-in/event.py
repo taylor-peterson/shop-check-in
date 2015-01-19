@@ -1,3 +1,5 @@
+# TODO: use enum instead of the below?
+
 CARD_SWIPE = "card_swipe"
 CARD_INSERT = "card_insert"
 CARD_REMOVE = "card_remove"
@@ -13,9 +15,10 @@ BUTTON_DISCHARGE_USER = "discharge_user"
 
 TERMINATE_PROGRAM = "halt"
 
+
 class Event():
     def __init__(self,
-                  key = "",
-                  data = None):
+                  key="",
+                  data=None):
         self.key = key
         self.data = data

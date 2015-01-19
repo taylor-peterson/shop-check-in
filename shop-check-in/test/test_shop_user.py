@@ -1,6 +1,5 @@
 import datetime
 
-import dateutil.parser
 from dateutil.relativedelta import relativedelta
 
 import shop_user
@@ -41,15 +40,15 @@ class TestShopUser:
 
     def test_has_valid_safety_test_out_of_date(self):
         user = shop_user.ShopUser()
-        assert user.has_valid_safety_test() == False
+        assert user._has_valid_safety_test() == False
 
         user.test_date = datetime.date.today() + relativedelta(years=-1)
-        assert user.has_valid_safety_test() == False
+        assert user._has_valid_safety_test() == False
 
     def test_has_valid_safety_test_succeed(self):
         user = shop_user.ShopUser()
         user.test_date = datetime.date.today()
-        assert user.has_valid_safety_test() == True
+        assert user._has_valid_safety_test() == True
 
         user.test_date = datetime.date.today() + relativedelta(years=-1, days=+1)
-        assert user.has_valid_safety_test() == True
+        assert user._has_valid_safety_test() == True
