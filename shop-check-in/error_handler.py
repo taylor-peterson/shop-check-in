@@ -12,15 +12,15 @@ class ErrorHandler():
 
         self._messages_to_display = {
             "default": DEFAULT_ERROR_MESSAGE,
-            shop_user.UNAUTHORIZED: "User does not have permissions for that action.",
+            shop_user.NONEXISTENT_USER: "User does not have permissions for that action.",
             event.CARD_SWIPE: "ERR - Ignoring swipe. Please confirm.",
-            event.CARD_REMOVE: "ERR - Reinsert card(s), or confirm students have left.", # send tsk email
+            event.CARD_REMOVE: "ERR - Reinsert card(s), or confirm students have left.",  # send tsk email
             "shop_occupied": "ERR - Shop occupied. Please confirm.",
             "pod_required": "ERR - There must be a proctor on duty."
             }
 
     def handle_error(self, current_state, error):
-        #winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
+        # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
 
         print self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
         print "Confirm to return to current state."

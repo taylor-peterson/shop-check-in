@@ -24,13 +24,14 @@ CHANGING_POD = "changing pod"
 
 # TODO: refactor FSM logic into separate class? (e.g. state, run_fsm)
 # TODO: any clean way to avoid unused function parameters?
+# TODO: get rid of unauthorized user error catching?
 
 
 class BoardFsm():
 
     def __init__(self, event_q, shop_user_db):
         self._state = CLOSED
-        self._shop = shop.Shop(shop_user_db)
+        self._shop = shop.Shop()
         self._shop_user_database = shop_user_db
         self._event_q = event_q
         self._error_handler = error_handler.ErrorHandler(event_q)
@@ -115,36 +116,38 @@ class BoardFsm():
         if user.is_proctor():
             return OPENING, user
         else:
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
     def _opening_process_switch_flip(self, ignored_event_data, user):
         try:
             self._shop.open_(user)
-        except shop_user.UnauthorizedUserError:
-            self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), user
+        except shop.UnauthorizedUserError:
+            self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), user
         except shop.ShopAlreadyOpenError:
-            self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), user
+            self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), user
         else:
             # TODO: old-school mac startup sound
             return STANDBY, None
 
     def _standby_process_card_swipe(self, user, ignored_cargo):
         if self._shop.is_pod(user):
-            return UNLOCKED, None
+            return UNLOCKED, user
         else:
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
     def _unlocked_process_card_swipe(self, user, ignored_cargo):
         if user.is_shop_certified():
             return ADDING_USER, [user]
         else:
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
-    def _unlocked_process_closing_shop(self, ignored_event_data, ignored_cargo):
+    def _unlocked_process_closing_shop(self, ignored_event_data, user):
         try:
-            self._shop.close_()
+            self._shop.close_(user)
         except shop.ShopOccupiedError:
-            return self._error_handler.handle_error(self._state, "shop_occupied"), ignored_cargo
+            return self._error_handler.handle_error(self._state, "shop_occupied"), user
+        except shop.UnauthorizedUserError:
+            return self._error_handler.handle_error(self._state, shop_user.UnauthorizedUserError), user
         else:
             return CLOSED, None
 
@@ -152,13 +155,13 @@ class BoardFsm():
         if second_user.is_shop_certified():
             return ADDING_USERS, first_user + [second_user]
         else:
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), first_user
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), first_user
 
     def _adding_user_s_process_slot(self, slot, user_s):
         try:
             self._shop.add_user_s_to_slot(user_s, slot)
-        except shop_user.UnauthorizedUserError:
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), user_s
+        except shop.UnauthorizedUserError:
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), user_s
         else:
             return STANDBY, None
 
@@ -171,7 +174,9 @@ class BoardFsm():
         return STANDBY, None
 
     def _removing_user_process_charge(self, ignored_event_data, slot):
-        self._shop.charge_user_s(slot)
+        user_s = self._shop.discharge_user_s(slot)
+        for user in user_s:
+            self._shop_user_database.increase_debt(user)
         # TODO: sad trombone
         return STANDBY, None
 
@@ -179,9 +184,9 @@ class BoardFsm():
         try:
             print "trying to clear user"
             self._shop_user_database.clear_debt(user)
-        except shop_user.UnauthorizedUserError:
+        except shop.UnauthorizedUserError:
             print "failed"
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
         else:
             print "succeeded"
             # TODO: cha-ching
@@ -192,8 +197,8 @@ class BoardFsm():
             self._shop.change_pod(user)
         except shop.PodRequiredError:
             return self._error_handler.handle_error(self._state, "pod_required"), ignored_cargo
-        except shop_user.UnauthorizedUserError:
-            return self._error_handler.handle_error(self._state, shop_user.UNAUTHORIZED), ignored_cargo
+        except shop.UnauthorizedUserError:
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
         else:
             return STANDBY, None
 

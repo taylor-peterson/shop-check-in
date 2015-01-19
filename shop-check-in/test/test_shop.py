@@ -1,268 +1,226 @@
-import Queue as queue
-
 import shop
-import shop_user
-import shop_user_database
-
-USER_POD = shop_user.ShopUser("1", "POD Joe", "email", shop_user.VALID_TEST_DATE, 0, True)
-USER_PROCTOR = shop_user.ShopUser("0", "Proctor Joe", "email", shop_user.VALID_TEST_DATE, 0, True)
-USER_CERTIFIED = shop_user.ShopUser("0", "Joe Schmoe", "email", shop_user.VALID_TEST_DATE, 0, False)
-USER_INVALID = shop_user.ShopUser("0000000000", shop_user.UNAUTHORIZED, "email", shop_user.INVALID_TEST_DATE)
+import sample_users
 
 FIRST_SLOT = 0
 LAST_SLOT = 29
-
-# TODO: split up tests so they only have one assert?
 
 
 class TestShop:
 
     def test_open_failure_not_proctor(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
+        machine_shop = shop.Shop()
 
         try:
-            machine_shop.open_(USER_CERTIFIED)
-        except shop_user.UnauthorizedUserError:
+            machine_shop.open_(sample_users.USER_CERTIFIED)
+        except shop.UnauthorizedUserError:
             assert not machine_shop._open
-            assert not machine_shop.is_pod(USER_CERTIFIED)
+            assert not machine_shop.is_pod(sample_users.USER_CERTIFIED)
         else:
             assert False
 
     def test_open_success(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         assert machine_shop._open
-        assert machine_shop.is_pod(USER_POD)
+        assert machine_shop.is_pod(sample_users.USER_POD)
 
     def test_open_failure_already_open(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         try:
-            machine_shop.open_(USER_POD)
+            machine_shop.open_(sample_users.USER_POD)
         except shop.ShopAlreadyOpenError:
             assert machine_shop._open
-            assert machine_shop.is_pod(USER_POD)
+            assert machine_shop.is_pod(sample_users.USER_POD)
         else:
             assert False
 
     def test_close_failure_not_empty(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
 
         try:
-            machine_shop.close_(USER_POD)
+            machine_shop.close_(sample_users.USER_POD)
         except shop.ShopOccupiedError:
             assert machine_shop._open
-            assert machine_shop.is_pod(USER_POD)
+            assert machine_shop.is_pod(sample_users.USER_POD)
             assert not machine_shop._empty()
 
     def test_close_failure_not_pod(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
 
         try:
-            machine_shop.close_(USER_PROCTOR)
-        except shop_user.UnauthorizedUserError:
+            machine_shop.close_(sample_users.USER_PROCTOR)
+        except shop.UnauthorizedUserError:
             assert machine_shop._open
-            assert machine_shop.is_pod(USER_POD)
+            assert machine_shop.is_pod(sample_users.USER_POD)
             assert not machine_shop._empty()
             
     def test_close_success(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-        machine_shop.close_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.close_(sample_users.USER_POD)
 
         assert not machine_shop._open
+        assert machine_shop._pods == []
         assert machine_shop._empty()
 
     def test_is_pod_failure(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
-        assert not machine_shop.is_pod(USER_PROCTOR)
+        assert not machine_shop.is_pod(sample_users.USER_PROCTOR)
 
     def test_is_pod_success(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-        machine_shop.change_pod(USER_PROCTOR)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
-        assert machine_shop.is_pod(USER_POD)
-        assert machine_shop.is_pod(USER_PROCTOR)
-        assert not machine_shop.is_pod(USER_CERTIFIED)
+        assert machine_shop.is_pod(sample_users.USER_POD)
 
-    def test_add_user_s_to_slot_single_user(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+    def test_is_pod_success_additional_pod(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.change_pod(sample_users.USER_PROCTOR)
 
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
-        assert machine_shop._occupants[FIRST_SLOT] == [USER_CERTIFIED]
+        assert machine_shop.is_pod(sample_users.USER_PROCTOR)
 
-    def test_add_user_s_to_slot_two_users(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+    def test_add_user_s_to_slot__success_single_user(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
 
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED, USER_PROCTOR], FIRST_SLOT)
+        assert machine_shop._occupants[FIRST_SLOT] == [sample_users.USER_CERTIFIED]
 
-        assert machine_shop._occupants[FIRST_SLOT] == [USER_CERTIFIED, USER_PROCTOR]
+    def test_add_user_s_to_slot_success_two_users(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED, sample_users.USER_PROCTOR], FIRST_SLOT)
 
-    def test_add_user_s_to_slot_one_invalid(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+        assert machine_shop._occupants[FIRST_SLOT] == [sample_users.USER_CERTIFIED, sample_users.USER_PROCTOR]
+
+    def test_add_user_s_to_slot_failure_one_invalid(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         try:
-            machine_shop.add_user_s_to_slot([USER_INVALID], FIRST_SLOT)
-        except shop_user.UnauthorizedUserError:
+            machine_shop.add_user_s_to_slot([sample_users.USER_INVALID], FIRST_SLOT)
+        except shop.UnauthorizedUserError:
             assert machine_shop._empty
         else:
             assert False
 
-    def test_add_user_s_to_slot_one_valid_one_invalid(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+    def test_add_user_s_to_slot_one_failure_valid_one_invalid(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         try:
-            machine_shop.add_user_s_to_slot([USER_CERTIFIED, USER_INVALID], FIRST_SLOT)
-        except shop_user.UnauthorizedUserError:
+            machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED, sample_users.USER_INVALID], FIRST_SLOT)
+        except shop.UnauthorizedUserError:
             assert machine_shop._empty
         else:
             assert False
 
-    def test_add_user_s_to_slot_two_invalid(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+    def test_add_user_s_to_slot_failure_two_invalid(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         try:
-            machine_shop.add_user_s_to_slot([USER_INVALID, USER_INVALID], FIRST_SLOT)
-        except shop_user.UnauthorizedUserError:
+            machine_shop.add_user_s_to_slot([sample_users.USER_INVALID, sample_users.USER_INVALID], FIRST_SLOT)
+        except shop.UnauthorizedUserError:
             assert machine_shop._empty
         else:
             assert False
 
     def test_replace_or_transfer_user_replace(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-        
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
         machine_shop.replace_or_transfer_user(FIRST_SLOT, FIRST_SLOT)
         
-        assert machine_shop._occupants[FIRST_SLOT] == [USER_CERTIFIED]        
+        assert machine_shop._occupants[FIRST_SLOT] == [sample_users.USER_CERTIFIED]        
 
     def test_replace_or_transfer_user_transfer(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
         machine_shop.replace_or_transfer_user(LAST_SLOT, FIRST_SLOT)
 
         assert machine_shop._occupants[FIRST_SLOT] == []
-        assert machine_shop._occupants[LAST_SLOT] == [USER_CERTIFIED]
+        assert machine_shop._occupants[LAST_SLOT] == [sample_users.USER_CERTIFIED]
 
     def test_discharge_user_s_single_user(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
 
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
-        machine_shop.discharge_user_s(FIRST_SLOT)
+        discharged_user = machine_shop.discharge_user_s(FIRST_SLOT)
 
         assert machine_shop._empty()
+        assert discharged_user == [sample_users.USER_CERTIFIED]
 
     def test_discharge_user_s_two_users(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED, sample_users.USER_PROCTOR], FIRST_SLOT)
 
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED, USER_PROCTOR], FIRST_SLOT)
-        machine_shop.discharge_user_s(FIRST_SLOT)
+        discharged_users = machine_shop.discharge_user_s(FIRST_SLOT)
 
         assert machine_shop._empty()
+        assert discharged_users == [sample_users.USER_CERTIFIED, sample_users.USER_PROCTOR]
 
-    def test_charge_user_s_single_user(self):
-        assert True is False # Need better way to test this.
+    def test_change_pod_success_non_pod_proctor(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.change_pod(sample_users.USER_PROCTOR)
 
-    def test_charge_user_s_two_users(self):
-        assert True is False # Need better way to test this.
+        assert machine_shop.is_pod(sample_users.USER_PROCTOR)
 
-    def test_change_pod_non_pod_proctor(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+    def test_change_pod_success_remove_pod(self):
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.change_pod(sample_users.USER_PROCTOR)
+        machine_shop.change_pod(sample_users.USER_POD)
 
-        machine_shop.change_pod(USER_PROCTOR)
-        assert machine_shop.is_pod(USER_PROCTOR)
-
-    def test_change_pod_remove_pod(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-
-        machine_shop.change_pod(USER_PROCTOR)
-        machine_shop.change_pod(USER_POD)
-
-        assert not machine_shop.is_pod(USER_POD)
-        assert machine_shop.is_pod(USER_PROCTOR)
+        assert not machine_shop.is_pod(sample_users.USER_POD)
+        assert machine_shop.is_pod(sample_users.USER_PROCTOR)
 
     def test_change_pod_failure_only_pod(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         try:
-            machine_shop.change_pod(USER_POD)
+            machine_shop.change_pod(sample_users.USER_POD)
         except shop.PodRequiredError:
-            assert machine_shop.is_pod(USER_POD)
+            assert machine_shop.is_pod(sample_users.USER_POD)
         else:
             assert False
 
     def test_change_pod_failure_not_proctor(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
 
         try:
-            machine_shop.change_pod(USER_CERTIFIED)
-        except shop_user.UnauthorizedUserError:
-            assert not machine_shop.is_pod(USER_CERTIFIED)
+            machine_shop.change_pod(sample_users.USER_CERTIFIED)
+        except shop.UnauthorizedUserError:
+            assert not machine_shop.is_pod(sample_users.USER_CERTIFIED)
         else:
             assert False
 
     def test_empty_false(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-        machine_shop.open_(USER_POD)
-
-        machine_shop.add_user_s_to_slot([USER_CERTIFIED], FIRST_SLOT)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED], FIRST_SLOT)
 
         assert not machine_shop._empty()
 
     def test_empty_true(self):
-        db = shop_user_database.ShopUserDatabaseSpoof()
-        machine_shop = shop.Shop(db)
-
-        assert machine_shop._empty()
-
-        machine_shop.open_(USER_POD)
-        machine_shop.close_(USER_POD)
+        machine_shop = shop.Shop()
+        machine_shop.open_(sample_users.USER_POD)
+        machine_shop.close_(sample_users.USER_POD)
 
         assert machine_shop._empty()

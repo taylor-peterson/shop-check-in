@@ -14,6 +14,8 @@ COL_PROCTOR = 7
 
 # TODO: make this work without internet or at least fail gracefully.
 # TODO: error handling on inputs
+# TODO: have increase_debt and clear_debt return new users?
+# TODO: gspread exceptions raised for other reasons than nonexistent user!
 
 
 class ShopUserDatabase():
@@ -22,11 +24,11 @@ class ShopUserDatabase():
     def __init__(self, event_q, spreadsheet="Shop Users"):
         self._event_q = event_q
 
-        googleAccount = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
-        self._worksheet = googleAccount.open(spreadsheet).worksheet("Sorted")
+        google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
+        self._worksheet = google_account.open(spreadsheet).worksheet("Sorted")
 
     def get_shop_user(self, id_number):
-        user = shop_user.ShopUser(id_number, shop_user.UNAUTHORIZED)
+        user = shop_user.ShopUser(id_number, shop_user.NONEXISTENT_USER)
         try:
             id_num = self._worksheet.find(id_number)
             row = id_num.row
@@ -49,24 +51,22 @@ class ShopUserDatabase():
     def increase_debt(self, user):
         try:
             id_num = self._worksheet.find(user.id_number)
-            row = id_num.row
-
-            user.debt += 3
-            self._worksheet.update_cell(row, COL_DEBT, user.debt)
         except gspread.GSpreadException:
-            raise shop_user.UnauthorizedUserError
+            raise NonexistentUserError
+        else:
+            user._debt += 3
+            self._worksheet.update_cell(id_num.row, COL_DEBT, user._debt)
 
         return user
 
     def clear_debt(self, user):
         try:
             id_num = self._worksheet.find(user.id_number)
-            row = id_num.row
-
-            user.debt = 0
-            self._worksheet.update_cell(row, COL_DEBT, user.debt)
         except gspread.GSpreadException:
-            raise shop_user.UnauthorizedUserError
+            raise NonexistentUserError
+        else:
+            user._debt = 0
+            self._worksheet.update_cell(id_num.row, COL_DEBT, user._debt)
 
         return user        
 
@@ -90,3 +90,7 @@ class ShopUserDatabaseSpoof(ShopUserDatabase):
 
     def clear_debt(self, user):
         pass
+
+
+class NonexistentUserError(Exception):
+    pass
