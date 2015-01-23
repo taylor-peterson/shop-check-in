@@ -2,8 +2,9 @@
 Richard Piersall - rpiersall@g.hmc.edu
 Taylor Peterson  - tpeterson@g.hmc.edu
 
-Arduino 
-
+Arduino code to communicate over USB serial with computer
+Read in strings and write to LCD
+Read in switch states and write out to serial
 
 */
 
@@ -18,10 +19,12 @@ Arduino
 #define SEL1  4
 #define SEL2  3
 #define SEL3  2
-#define in0   9 // Button Pins
-#define in1  10
-#define in2  11
-#define in3  12
+#define PWR   7 // Power Switch Pin
+#define in0   8 // Button Pins
+#define in1   9
+#define in2  10
+#define in3  11
+#define in4  12 
 
 // Constants
 const int STRLEN = 16;      // Character-width of LCD row
@@ -30,8 +33,10 @@ const int SHIFTTIME = 62;   // Time between multiplexer shifts
 
 // Initializing Variables
 int lcdCursor;
-int buttonState[4];
-int buttonRead[4];
+int buttonState[5];
+int buttonRead[5];
+int switchRead;
+int switchState;
 int matrixState[32];
 int selectPins;
 boolean mux0, mux1;
@@ -65,12 +70,27 @@ void loop() {
 
 
 
+void initSwitch(){
+  pinMode(PWR, INPUT_PULLUP);
+}
+
+void readSwitch(){
+  switchRead = digitalRead(PWR);
+  if (switchState != switchRead){
+    Serial.print("S");
+    Serial.println(switchRead);
+    switchState = switchRead;
+  }
+}
+  
+
 
 void initButtons(){
   pinMode(in0, INPUT_PULLUP);
   pinMode(in1, INPUT_PULLUP);
   pinMode(in2, INPUT_PULLUP);
   pinMode(in3, INPUT_PULLUP);
+  pinMode(in4, INPUT_PULLUP);
 }
 
 
@@ -80,13 +100,14 @@ void readButtons(){
   buttonRead[1] = !digitalRead(in1);
   buttonRead[2] = !digitalRead(in2);
   buttonRead[3] = !digitalRead(in3);
+  buttonRead[4] = !digitalRead(in4);  
   
-  for(int i=0; i<4; i++){
+  for(int i=0; i<5; i++){
     if (buttonRead[i] != buttonState[i]){
       Serial.print("B");
-      Serial.print(i);
-      Serial.print(",");
-      Serial.println(buttonRead[i]);
+      Serial.print(buttonRead[i]);
+      Serial.print(" ");
+      Serial.println(i);
       buttonState[i] = buttonRead[i];
     }
   }
@@ -123,14 +144,16 @@ void readMuxer(){
     mux1 = digitalRead(SIG1);
     
     if (mux0 != matrixState[selectPins]){
+      Serial.print("M");
+      Serial.print(mux0);
+      Serial.print(" ");
       Serial.print(selectPins);
-      Serial.print(",");
-      Serial.println(mux0);
     }      
-    if (mux1 > matrixState[selectPins + 16]){
-      Serial.print(selectPins);
-      Serial.print(",");
-      Serial.println(mux1);
+    if (mux1 != matrixState[selectPins + 16]){
+      Serial.print("M");
+      Serial.print(mux1);
+      Serial.print(" ");
+      Serial.print(selectPins + 16);
     }         
       
     matrixState[selectPins]      = mux0;
