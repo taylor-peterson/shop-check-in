@@ -12,7 +12,7 @@ class ShopUser:
         Note that all changes to shop users must go through the database.
     """
     def __init__(self,
-                 id_number=0,
+                 id_number="0000000",
                  name=NONEXISTENT_USER,
                  email="null",
                  test_date=INVALID_TEST_DATE,
@@ -22,7 +22,7 @@ class ShopUser:
         self._name = name
         self._email = email
         self._test_date = test_date
-        self._debt = debt
+        self.debt = debt
         self._proctor = proctor
 
     def is_shop_certified(self):
@@ -42,7 +42,7 @@ class ShopUser:
                 self._name == other._name and
                 self._email == other._email and
                 self._test_date == other._test_date and
-                self._debt == other._debt and
+                self.debt == other.debt and
                 self._proctor == other._proctor):
             return True
         else:

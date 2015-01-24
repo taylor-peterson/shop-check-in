@@ -1,5 +1,8 @@
-import gspread  # Google Spreadsheets Python API
+import csv
+import datetime
 
+import gspread  # Google Spreadsheets Python API
+import gspread.exceptions
 import dateutil.parser
 
 import event
@@ -12,76 +15,156 @@ COL_ID = 5
 COL_DEBT = 6
 COL_PROCTOR = 7
 
+PROCTOR = "Yes"
+
+DEBT_INCREMENT = 3
+
 # TODO: make this work without internet or at least fail gracefully.
-# TODO: error handling on inputs
-# TODO: have increase_debt and clear_debt return new users?
-# TODO: gspread exceptions raised for other reasons than nonexistent user!
+# If catch AuthenticationError or RequestError assume no internet and default to local copy?
+    # gspread.AuthenticationError if login attempt fails
+    # gspread.RequestError
+
+# TODO: don't assume that the spreadsheet has valid data
+    # If not, need to catch ValueError for the reformatting  in get_shop_user and do checks on all values
+    # Raise invalid user error?
 
 
 class ShopUserDatabase():
-    """ Interface for Google Spreadsheets. 
-    """
-    def __init__(self, event_q, spreadsheet="Shop Users"):
-        self._event_q = event_q
 
-        google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
-        self._worksheet = google_account.open(spreadsheet).worksheet("Sorted")
+    def __init__(self, event_q):
+        self._event_q = event_q
+        self._shop_user_database = {}
+
+        self._initialize_database()
+
+    def _initialize_database(self):
+        try:
+            # populate dictionary using gspread
+            pass
+        except:  # internet down/spread failure
+            # pull in version from csv
+            pass
+        else:
+            # make list of users with unsynced flags in .csv
+            # update dictionary accordingly
+            self._synchronize_databases()
+            # rewrite .csv from dictionary
+
+    def _update_database(self):
+        # same as initialize, but no need to overwrite if fail gspread
+        pass
 
     def get_shop_user(self, id_number):
-        user = shop_user.ShopUser(id_number, shop_user.NONEXISTENT_USER)
         try:
-            id_num = self._worksheet.find(id_number)
-            row = id_num.row
+            return self._shop_user_database(id_number)
+        except KeyError:
+            try:
+                # lookup in google spreadsheet
+                pass
+            except:  # internet down/gspread failure
+                pass
+            else:
+                # add to user dictionar
+                # add to .csv (on separate thread?)
+                pass
 
-            name = self._worksheet.cell(row, COL_NAME).value
-            email = self._worksheet.cell(row, COL_EMAIL).value
-            test_date_str = self._worksheet.cell(row, COL_TEST_DATE).value  # TODO: remove str from name?
-            debt = int(float(self._worksheet.cell(row, COL_DEBT).value))
-            proctor = (self._worksheet.cell(row, COL_PROCTOR).value == "Yes")
+    def _change_debt(self, user, new_debt):
+        # change debt value in dictionary
+        # spawn threads to change value in .csv and gspread
+            # if fails to write to gspread, flag value in dictionary and .csv
+        pass
 
-            test_date = dateutil.parser.parse(test_date_str)  # invalid date raises ValueError
-
-            user = shop_user.ShopUser(id_number, name, email, test_date, debt, proctor)
-        except gspread.GSpreadException:
-            pass
-    
-        card_swipe_event = event.Event(event.CARD_SWIPE, user)
-        self._event_q.put(card_swipe_event)
-
-    def increase_debt(self, user):
-        try:
-            id_num = self._worksheet.find(user.id_number)
-        except gspread.GSpreadException:
-            raise NonexistentUserError
-        else:
-            user._debt += 3
-            self._worksheet.update_cell(id_num.row, COL_DEBT, user._debt)
-
-        return user
-
-    def clear_debt(self, user):
-        try:
-            id_num = self._worksheet.find(user.id_number)
-        except gspread.GSpreadException:
-            raise NonexistentUserError
-        else:
-            user._debt = 0
-            self._worksheet.update_cell(id_num.row, COL_DEBT, user._debt)
-
-        return user        
-
-# TODO: if the actual class can't work without internet, make this work on a local copy of the spreadsheet
+    def _synchronize_databases(self, unsynced_users):
+            try:
+                # update gspread with unsynced users
+                pass
+            except: # gspread/internet failure
+                pass
+            else:
+                # remove flag(s) from dictionary and .csv
+                pass
 
 
-class ShopUserDatabaseSpoof(ShopUserDatabase):
-    """ For testing purposes only.
-        Having this allows for quicker tests by avoiding the need to
-        unnecessarily connect to Google Drive.
-    """
+class _ShopUserDatabaseExternal:
 
     def __init__(self):
         pass
 
+    def get_shop_user_database(self):
+        pass
+
+    def update_user(self, id_number):
+        pass
+
+
+
+class ShopUserDatabaseGoogleSpreadsheet(_ShopUserDatabaseExternal):
+    """ Interface for Google Spreadsheets. 
+    """
+    def __init__(self, event_q, spreadsheet="Shop Users", worksheet="Raw Data"):
+        self._event_q = event_q
+
+        try:
+            google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
+        except gspread.AuthenticationError:
+            raise gspread.AuthenticationError  # No internet access.
+        else:
+            self._worksheet = google_account.open(spreadsheet).worksheet(worksheet)
+
+    def get_shop_user_database(self):
+        pass
+
+    def get_shop_user(self, id_number):
+        try:
+            cell_id_number = self._worksheet.find(id_number)
+        except gspread.exceptions.CellNotFound:
+            user = shop_user.ShopUser(id_number)
+        else:
+            row = cell_id_number.row
+
+            name = self._worksheet.cell(row, COL_NAME).value
+            email = self._worksheet.cell(row, COL_EMAIL).value
+            cell_value_test_date = self._worksheet.cell(row, COL_TEST_DATE).value
+            cell_value_debt = self._worksheet.cell(row, COL_DEBT).value
+            proctorliness = self._worksheet.cell(row, COL_PROCTOR).value
+
+            test_date = dateutil.parser.parse(cell_value_test_date)
+            debt = int(float(cell_value_debt))
+            proctor = (proctorliness == PROCTOR)
+
+            user = shop_user.ShopUser(id_number, name, email, test_date, debt, proctor)
+
+        card_swipe_event = event.Event(event.CARD_SWIPE, user)  # TODO: make user into list?
+        self._event_q.put(card_swipe_event)
+
+    def increase_debt(self, user):
+        self._change_debt(user, user.debt + DEBT_INCREMENT)
+
+    def clear_debt(self, user):
+        self._chnage_debt(user, 0)
+
+    def _change_debt(self, user, new_debt):
+        try:
+            id_num = self._worksheet.find(user.id_number)
+        except gspread.exceptions.CellNotFound:
+            raise NonexistentUserError
+        else:
+            try:
+                self._worksheet.update_cell(id_num.row, COL_DEBT, new_debt)
+            except gspread.UpdateCellError:
+                raise gspread.UpdateCellError  # TODO: what to do here?
+            else:
+                user.debt = new_debt
+
+
+class ShopUserDatabaseLocal(_ShopUserDatabaseExternal):
+
+    def __init__(self):
+        pass
+
+    def get_shop_user_database(self):
+        pass
+
     def get_shop_user(self, id_number):
         pass
 
@@ -90,6 +173,38 @@ class ShopUserDatabaseSpoof(ShopUserDatabase):
 
     def clear_debt(self, user):
         pass
+
+class CsvTesting():
+
+
+    def stripper(self, value):
+        # Strip any whitespace from the left and right
+        return value.strip()
+
+    def to_float(self, value):
+        return float(value)
+
+    def to_date(self, value):
+        # We expect dates like: "2013/05/23"
+        datetime.datetime.strptime(value, '%Y/%m/%d').date()
+
+    OPERATIONS = {
+        'Product Name': [stripper],
+        'Release Date': [stripper, to_date],
+        'Price': [stripper, to_float]
+    }
+
+    def parse_csv(self, filepath):
+        with open(filepath, 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                for column in row:
+                    operations = CsvTesting.OPERATIONS[column]
+                    value = row[column]
+                    for op in operations:
+                        value = op(value)
+                    # Print the cleaned value or store it somewhere
+                    print value
 
 
 class NonexistentUserError(Exception):

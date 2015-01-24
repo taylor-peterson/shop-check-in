@@ -8,6 +8,7 @@ import id_logger
 import shop
 import shop_user
 import shop_user_database
+import io_moderator
 
 MESSAGE = 0
 ACTIONS_DICT = 1
@@ -25,6 +26,7 @@ CHANGING_POD = "changing pod"
 # TODO: refactor FSM logic into separate class? (e.g. state, run_fsm)
 # TODO: any clean way to avoid unused function parameters?
 # TODO: get rid of unauthorized user error catching?
+# TODO: clarify exceptions for proctors - either no safety test or not hired asproctor?
 
 
 class BoardFsm():
@@ -119,15 +121,9 @@ class BoardFsm():
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
     def _opening_process_switch_flip(self, ignored_event_data, user):
-        try:
-            self._shop.open_(user)
-        except shop.UnauthorizedUserError:
-            self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), user
-        except shop.ShopAlreadyOpenError:
-            self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), user
-        else:
-            # TODO: old-school mac startup sound
-            return STANDBY, None
+        self._shop.open_(user)
+        # TODO: old-school mac startup sound
+        return STANDBY, None
 
     def _standby_process_card_swipe(self, user, ignored_cargo):
         if self._shop.is_pod(user):
@@ -146,8 +142,6 @@ class BoardFsm():
             self._shop.close_(user)
         except shop.ShopOccupiedError:
             return self._error_handler.handle_error(self._state, "shop_occupied"), user
-        except shop.UnauthorizedUserError:
-            return self._error_handler.handle_error(self._state, shop_user.UnauthorizedUserError), user
         else:
             return CLOSED, None
 
@@ -158,12 +152,8 @@ class BoardFsm():
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), first_user
 
     def _adding_user_s_process_slot(self, slot, user_s):
-        try:
-            self._shop.add_user_s_to_slot(user_s, slot)
-        except shop.UnauthorizedUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), user_s
-        else:
-            return STANDBY, None
+        self._shop.add_user_s_to_slot(user_s, slot)
+        return STANDBY, None
 
     def _removing_user_process_slot(self, slot, prev_slot):
         self._shop.replace_or_transfer_user(slot, prev_slot)
@@ -182,14 +172,10 @@ class BoardFsm():
 
     def _clearing_debt_process_card_swipe(self, user, ignored_cargo):
         try:
-            print "trying to clear user"
             self._shop_user_database.clear_debt(user)
-        except shop.UnauthorizedUserError:
-            print "failed"
+        except shop_user_database.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
         else:
-            print "succeeded"
-            # TODO: cha-ching
             return STANDBY, user
 
     def _changing_pod_process_card_swipe(self, user, ignored_cargo):
@@ -205,12 +191,15 @@ class BoardFsm():
 
 def main():
     event_q = queue.Queue()
+    message_q = queue.Queue()
 
-    shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+    shop_user_db = shop_user_database.ShopUserDatabaseGspread(event_q, "Python Testing")
     board = BoardFsm(event_q, shop_user_db)
 
-    thread = id_logger.IdLogger(shop_user_db)
-    thread.start()
+    thread_id_logger = id_logger.IdLogger(shop_user_db)
+    thread_io_moderator = io_moderator.IoModerator(event_q, message_q)
+    thread_id_logger.start()
+    thread_io_moderator.start()
 
     while True:
         board.run_fsm()

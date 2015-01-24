@@ -51,7 +51,8 @@ LiquidCrystal lcd(18, 19, 20, 21, 22, 23);
 
 void setup() {
   Serial.begin(115200);
-  
+
+  initSwitch();
   initButtons();
   initMuxer();  
   resetMuxer();
@@ -62,6 +63,7 @@ void setup() {
 }
 
 void loop() {
+  readSwitch();
   readButtons();
   readMuxer();
   lcdScroll();
@@ -105,8 +107,6 @@ void readButtons(){
   for(int i=0; i<5; i++){
     if (buttonRead[i] != buttonState[i]){
       Serial.print("B");
-      Serial.print(buttonRead[i]);
-      Serial.print(" ");
       Serial.println(i);
       buttonState[i] = buttonRead[i];
     }
@@ -146,13 +146,11 @@ void readMuxer(){
     if (mux0 != matrixState[selectPins]){
       Serial.print("M");
       Serial.print(mux0);
-      Serial.print(" ");
       Serial.print(selectPins);
     }      
     if (mux1 != matrixState[selectPins + 16]){
       Serial.print("M");
       Serial.print(mux1);
-      Serial.print(" ");
       Serial.print(selectPins + 16);
     }         
       

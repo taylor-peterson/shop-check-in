@@ -1,15 +1,15 @@
 CARD_SWIPE = "card_swipe"
-CARD_INSERT = "card_insert"
-CARD_REMOVE = "card_remove"
+CARD_INSERT = "M1"
+CARD_REMOVE = "M0"
 
-SWITCH_FLIP_ON = "flip_switch_on"
-SWITCH_FLIP_OFF = "flip_switch_off"
+SWITCH_FLIP_ON = "S1"
+SWITCH_FLIP_OFF = "S0"
 
-BUTTON_CANCEL = "cancel"
-BUTTON_CONFIRM = "confirm"
-BUTTON_MONEY = "money"
-BUTTON_CHANGE_POD = "change_pod"
-BUTTON_DISCHARGE_USER = "discharge_user"
+BUTTON_CANCEL = "B0"
+BUTTON_CONFIRM = "B1"
+BUTTON_MONEY = "B2"
+BUTTON_CHANGE_POD = "B3"
+BUTTON_DISCHARGE_USER = "B4"
 
 TERMINATE_PROGRAM = "halt"
 
@@ -17,6 +17,6 @@ TERMINATE_PROGRAM = "halt"
 class Event():
     def __init__(self,
                  key="",
-                 data=None):
+                 data=[]):
         self.key = key
         self.data = data
