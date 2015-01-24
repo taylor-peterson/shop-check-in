@@ -6,7 +6,7 @@ ID_STRING_ONE_BROKEN_UP = ";40155 gibberish 181\x00"
 ID_STRING_TWO_BACK_TO_BACK = ";40155181\x00;40155181\x00"
 ID_STRING_TWO_SEPARATED = ";40155181\x00 gibberish ;40155181\x00"
 
-# TODO: figure out how to spoof recieving keyboard input.
+# TODO: figure out how to spoof receiving keyboard input.
     # Can't actually send the appropriate keypresses as \x00 isn't supported.
     # Plus, doing so wouldn't be proper as it could have unwanted side-effects.
 

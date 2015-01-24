@@ -1,32 +1,14 @@
-import csv
-import datetime
+import cPickle as pickle
 
 import gspread  # Google Spreadsheets Python API
 import gspread.exceptions
-import dateutil.parser
 
 import event
 import shop_user
 
-COL_NAME = 1
-COL_TEST_DATE = 2
-COL_EMAIL = 4
-COL_ID = 5
-COL_DEBT = 6
-COL_PROCTOR = 7
-
 PROCTOR = "Yes"
 
 DEBT_INCREMENT = 3
-
-# TODO: make this work without internet or at least fail gracefully.
-# If catch AuthenticationError or RequestError assume no internet and default to local copy?
-    # gspread.AuthenticationError if login attempt fails
-    # gspread.RequestError
-
-# TODO: don't assume that the spreadsheet has valid data
-    # If not, need to catch ValueError for the reformatting  in get_shop_user and do checks on all values
-    # Raise invalid user error?
 
 
 class ShopUserDatabase():
@@ -34,178 +16,158 @@ class ShopUserDatabase():
     def __init__(self, event_q):
         self._event_q = event_q
         self._shop_user_database = {}
+        self._out_of_sync_users = []
+
+        self._shop_user_database_google_worksheet = None
+        self._connect_to_google_spreadsheet()
+
+        self._shop_user_database_local = _ShopUserDatabaseLocal()
 
         self._initialize_database()
 
-    def _initialize_database(self):
-        try:
-            # populate dictionary using gspread
-            pass
-        except:  # internet down/spread failure
-            # pull in version from csv
-            pass
-        else:
-            # make list of users with unsynced flags in .csv
-            # update dictionary accordingly
-            self._synchronize_databases()
-            # rewrite .csv from dictionary
-
-    def _update_database(self):
-        # same as initialize, but no need to overwrite if fail gspread
-        pass
+    def __del__(self):
+        self._shop_user_database_local.dump_shop_user_database(self._shop_user_database)
+        self._shop_user_database_local.dump_out_of_sync_users(self._out_of_sync_users)
 
     def get_shop_user(self, id_number):
         try:
-            return self._shop_user_database(id_number)
+            user = self._shop_user_database[id_number]
         except KeyError:
-            try:
-                # lookup in google spreadsheet
-                pass
-            except:  # internet down/gspread failure
-                pass
-            else:
-                # add to user dictionar
-                # add to .csv (on separate thread?)
-                pass
+            user = self._get_shop_user_from_google_spreadsheet()  # Raises NonexistentUserError if not found.
 
-    def _change_debt(self, user, new_debt):
-        # change debt value in dictionary
-        # spawn threads to change value in .csv and gspread
-            # if fails to write to gspread, flag value in dictionary and .csv
-        pass
-
-    def _synchronize_databases(self, unsynced_users):
-            try:
-                # update gspread with unsynced users
-                pass
-            except: # gspread/internet failure
-                pass
-            else:
-                # remove flag(s) from dictionary and .csv
-                pass
-
-
-class _ShopUserDatabaseExternal:
-
-    def __init__(self):
-        pass
-
-    def get_shop_user_database(self):
-        pass
-
-    def update_user(self, id_number):
-        pass
-
-
-
-class ShopUserDatabaseGoogleSpreadsheet(_ShopUserDatabaseExternal):
-    """ Interface for Google Spreadsheets. 
-    """
-    def __init__(self, event_q, spreadsheet="Shop Users", worksheet="Raw Data"):
-        self._event_q = event_q
-
-        try:
-            google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
-        except gspread.AuthenticationError:
-            raise gspread.AuthenticationError  # No internet access.
-        else:
-            self._worksheet = google_account.open(spreadsheet).worksheet(worksheet)
-
-    def get_shop_user_database(self):
-        pass
-
-    def get_shop_user(self, id_number):
-        try:
-            cell_id_number = self._worksheet.find(id_number)
-        except gspread.exceptions.CellNotFound:
-            user = shop_user.ShopUser(id_number)
-        else:
-            row = cell_id_number.row
-
-            name = self._worksheet.cell(row, COL_NAME).value
-            email = self._worksheet.cell(row, COL_EMAIL).value
-            cell_value_test_date = self._worksheet.cell(row, COL_TEST_DATE).value
-            cell_value_debt = self._worksheet.cell(row, COL_DEBT).value
-            proctorliness = self._worksheet.cell(row, COL_PROCTOR).value
-
-            test_date = dateutil.parser.parse(cell_value_test_date)
-            debt = int(float(cell_value_debt))
-            proctor = (proctorliness == PROCTOR)
-
-            user = shop_user.ShopUser(id_number, name, email, test_date, debt, proctor)
-
-        card_swipe_event = event.Event(event.CARD_SWIPE, user)  # TODO: make user into list?
+        card_swipe_event = event.Event(event.CARD_SWIPE, user)
         self._event_q.put(card_swipe_event)
 
     def increase_debt(self, user):
         self._change_debt(user, user.debt + DEBT_INCREMENT)
 
     def clear_debt(self, user):
-        self._chnage_debt(user, 0)
+        self._change_debt(user, 0)
 
     def _change_debt(self, user, new_debt):
         try:
-            id_num = self._worksheet.find(user.id_number)
-        except gspread.exceptions.CellNotFound:
+            self._shop_user_database[user.id_number][shop_user.DEBT] = new_debt
+        except KeyError:
             raise NonexistentUserError
         else:
+            self._out_of_sync_users.append(user)
+            self._synchronize_databases()
+
+    def _connect_to_google_spreadsheet(self):
+        if self._shop_user_database_google_worksheet is None:
             try:
-                self._worksheet.update_cell(id_num.row, COL_DEBT, new_debt)
-            except gspread.UpdateCellError:
-                raise gspread.UpdateCellError  # TODO: what to do here?
+                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet()
+            except (gspread.AuthenticationError, IOError):
+                raise _CannotAccessGoogleSpreadsheetsError
+        else:
+            try:
+                self._shop_user_database_google_worksheet.test_connection()
+            except IOError:
+                self._shop_user_database_google_worksheet = None
+                self._connect_to_google_spreadsheet()
+
+    def _get_shop_user_from_google_spreadsheet(self, id_number):
+        try:
+            self._connect_to_google_spreadsheet()
+        except _CannotAccessGoogleSpreadsheetsError:
+            return shop_user.ShopUser()
+
+        try:
+            user_data = _ShopUserDatabaseGoogleWorksheet.get_shop_user_data(id_number)
+        except (gspread.exceptions.CellNotFound, IOError):
+            raise NonexistentUserError
+        else:
+            user = shop_user.ShopUser(user_data)
+            self._shop_user_database[user.id_number] = user
+
+        return user
+
+    def _initialize_database(self):
+        try:
+            self._connect_to_google_spreadsheet()
+            self._shop_user_database = self._shop_user_database_google_worksheet.load_shop_user_database()
+        except (gspread.GSpreadException, _CannotAccessGoogleSpreadsheetsError):
+            self._shop_user_database = self._shop_user_database_local.load_shop_user_database()
+        else:
+            self._out_of_sync_users = self._shop_user_database_local.load_out_of_sync_users()
+            self._synchronize_databases()
+
+    def _synchronize_databases(self):
+            try:
+                for user in self._out_of_sync_users:
+                    self._shop_user_database_google_worksheet.update_user(user)
+            except (gspread.GSpreadException, IOError):
+                pass
             else:
-                user.debt = new_debt
+                self._out_of_sync_users = []
 
 
-class ShopUserDatabaseLocal(_ShopUserDatabaseExternal):
+class _ShopUserDatabaseGoogleWorksheet():
 
-    def __init__(self):
-        pass
+    def __init__(self, spreadsheet="Shop Users", worksheet="Raw Data"):
+        google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
+        self._worksheet = google_account.open(spreadsheet).worksheet(worksheet)
 
     def get_shop_user_database(self):
-        pass
+        raw_data = self._worksheet.get_all_values()
+        shop_users = [shop_user.ShopUser(shop_user_data) for shop_user_data in raw_data]
+        shop_user_database = {user.id_number: user for user in shop_users}
+        return shop_user_database
 
-    def get_shop_user(self, id_number):
-        pass
+    def get_shop_user_data(self, id_number):
+        cell_id_number = self._worksheet.find(id_number)
+        return self._worksheet.row_values(cell_id_number.row)
 
-    def increase_debt(self, user):
-        pass
+    def test_connection(self):
+        self._worksheet.cell(0, 0)
 
-    def clear_debt(self, user):
-        pass
+    def update_user(self, user):
+        self._change_debt(user)
 
-class CsvTesting():
+    def _change_debt(self, id_number, new_debt):
+        row = self._worksheet.find(id_number).row
+        col = shop_user.DEBT + 1  # gspread is 1-indexed, shop_users are 0-indexed.
+        self._worksheet.update_cell(row, col, new_debt)
 
 
-    def stripper(self, value):
-        # Strip any whitespace from the left and right
-        return value.strip()
+class _ShopUserDatabaseLocal():
 
-    def to_float(self, value):
-        return float(value)
+    def __init__(self,
+                 database_file_path="shop_user_database_local.pkl",
+                 out_of_date_users_file_path="out_of_date_users.pkl"):
+        self._database_file_path = database_file_path
+        self._out_of_date_users_file_path = out_of_date_users_file_path
 
-    def to_date(self, value):
-        # We expect dates like: "2013/05/23"
-        datetime.datetime.strptime(value, '%Y/%m/%d').date()
+    def load_shop_user_database(self):
+        return self._load_file(self._database_file_path)
 
-    OPERATIONS = {
-        'Product Name': [stripper],
-        'Release Date': [stripper, to_date],
-        'Price': [stripper, to_float]
-    }
+    def load_out_of_sync_users(self):
+        return self._load_file(self._out_of_date_users_file_path)
 
-    def parse_csv(self, filepath):
-        with open(filepath, 'r') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                for column in row:
-                    operations = CsvTesting.OPERATIONS[column]
-                    value = row[column]
-                    for op in operations:
-                        value = op(value)
-                    # Print the cleaned value or store it somewhere
-                    print value
+    def dump_shop_user_database(self, database):
+        self._dump_file(self._database_file_path, database)
+
+    def dump_out_of_sync_users(self, out_of_sync_users):
+        self._dump_file(self._out_of_date_users_file_path, out_of_sync_users)
+
+    def _load_file(self, file_path):
+        with open(file_path, 'rb') as file_:
+            return pickle.load(file_)
+
+    def _dump_file(self, file_path, dumpee):
+        self._erase_file(file_path)
+
+        with open(file_path, 'wb') as file_:
+            pickle.dump(dumpee, file_)
+
+    def _erase_file(self, file_path):
+        with open(file_path, "wb") as file_:
+            file_.truncate()
 
 
 class NonexistentUserError(Exception):
+    pass
+
+
+class _CannotAccessGoogleSpreadsheetsError(Exception):
     pass

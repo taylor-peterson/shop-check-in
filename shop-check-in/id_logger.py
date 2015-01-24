@@ -4,6 +4,8 @@ import threading
 import pyHook  # Callbacks for keyboard events
 import pythoncom  # Tie in to Windows events
 
+import event
+
 ID_REGEX = ";[0-9]{10}\x00"
 
 
@@ -17,10 +19,10 @@ class IdLogger(threading.Thread):
         Output is done by spawning a shop user database lookup.
     """
 
-    def __init__(self, shop_user_database):        
+    def __init__(self, event_q):
         super(IdLogger, self).__init__()
 
-        self._shop_user_database = shop_user_database
+        self._event_q = event_q
         self._id_buffer = []
         
     def run(self):
@@ -29,19 +31,17 @@ class IdLogger(threading.Thread):
         hook_manager.HookKeyboard()
         pythoncom.PumpMessages()
 
-    def _on_keyboard_event(self, event):
-        self._add_char_to_buffer(chr(event.Ascii))
+    def _on_keyboard_event(self, event_data):
+        self._add_char_to_buffer(chr(event_data.Ascii))
         buffer_as_string = ''.join(map(str, self._id_buffer))
         
         search_result = re.search(ID_REGEX, buffer_as_string)
         
         if search_result is not None:
             id_number = search_result.group()[2:-2]
-            
-            t = threading.Thread(target=self._shop_user_database.get_shop_user, args=(id_number, ))
-            t.start()
-            
-        return True
+
+            new_event = event_data.Event(event_data.CARD_SWIPE, id_number)
+            self._event_q.put(new_event)
 
     def _add_char_to_buffer(self, char):
         if len(self._id_buffer) >= 12:

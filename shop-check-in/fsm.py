@@ -26,7 +26,7 @@ CHANGING_POD = "changing pod"
 # TODO: refactor FSM logic into separate class? (e.g. state, run_fsm)
 # TODO: any clean way to avoid unused function parameters?
 # TODO: get rid of unauthorized user error catching?
-# TODO: clarify exceptions for proctors - either no safety test or not hired asproctor?
+# TODO: clarify exceptions for proctors - either no safety test or not hired as proctor?
 
 
 class BoardFsm():
@@ -114,7 +114,8 @@ class BoardFsm():
     def _go_to_change_pod_state(self, ignored_event_data, ignored_cargo):
         return CHANGING_POD, None
 
-    def _closed_process_card_swipe(self, user, ignored_cargo):
+    def _closed_process_card_swipe(self, id_number, ignored_cargo):
+        user = self._shop_user_database.get_shop_user(id_number)
         if user.is_proctor():
             return OPENING, user
         else:
@@ -125,13 +126,16 @@ class BoardFsm():
         # TODO: old-school mac startup sound
         return STANDBY, None
 
-    def _standby_process_card_swipe(self, user, ignored_cargo):
+    def _standby_process_card_swipe(self, id_number, ignored_cargo):
+        user = self._shop_user_database.get_shop_user(id_number)
         if self._shop.is_pod(user):
             return UNLOCKED, user
         else:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
-    def _unlocked_process_card_swipe(self, user, ignored_cargo):
+    def _unlocked_process_card_swipe(self, id_number, ignored_cargo):
+        user = self._shop_user_database.get_shop_user(id_number)
+
         if user.is_shop_certified():
             return ADDING_USER, [user]
         else:
@@ -145,7 +149,9 @@ class BoardFsm():
         else:
             return CLOSED, None
 
-    def _adding_user_process_card_swipe(self, second_user, first_user):
+    def _adding_user_process_card_swipe(self, id_number, first_user):
+        second_user = self._shop_user_database.get_shop_user(id_number)
+
         if second_user.is_shop_certified():
             return ADDING_USERS, first_user + [second_user]
         else:
@@ -165,12 +171,15 @@ class BoardFsm():
 
     def _removing_user_process_charge(self, ignored_event_data, slot):
         user_s = self._shop.discharge_user_s(slot)
+
         for user in user_s:
             self._shop_user_database.increase_debt(user)
         # TODO: sad trombone
         return STANDBY, None
 
-    def _clearing_debt_process_card_swipe(self, user, ignored_cargo):
+    def _clearing_debt_process_card_swipe(self, id_number, ignored_cargo):
+        user = self._shop_user_database.get_shop_user(id_number)
+
         try:
             self._shop_user_database.clear_debt(user)
         except shop_user_database.NonexistentUserError:
@@ -178,7 +187,9 @@ class BoardFsm():
         else:
             return STANDBY, user
 
-    def _changing_pod_process_card_swipe(self, user, ignored_cargo):
+    def _changing_pod_process_card_swipe(self, id_number, ignored_cargo):
+        user = self._shop_user_database.get_shop_user(id_number)
+
         try:
             self._shop.change_pod(user)
         except shop.PodRequiredError:
@@ -193,10 +204,10 @@ def main():
     event_q = queue.Queue()
     message_q = queue.Queue()
 
-    shop_user_db = shop_user_database.ShopUserDatabaseGspread(event_q, "Python Testing")
+    shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
     board = BoardFsm(event_q, shop_user_db)
 
-    thread_id_logger = id_logger.IdLogger(shop_user_db)
+    thread_id_logger = id_logger.IdLogger(event_q)
     thread_io_moderator = io_moderator.IoModerator(event_q, message_q)
     thread_id_logger.start()
     thread_io_moderator.start()

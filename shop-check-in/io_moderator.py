@@ -44,7 +44,3 @@ class IoModerator(threading.Thread):
         event_key = message[EVENT_KEY_START_INDEX, EVENT_KEY_END_INDEX]
         event_data = message[EVENT_DATA_START_INDEX:]  # Empty list if index is out of bounds.
         return event.Event(event_key, event_data)
-
-
-
-
