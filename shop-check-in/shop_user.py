@@ -11,14 +11,18 @@ DEBT = 5
 PROCTOR = 6
 
 NONEXISTENT_USER = "nonexistent_user"
-INVALID_TEST_DATE = dateutil.parser.parse("1970-03-22")
+INVALID_TEST_DATE = "1970-03-22"
+
+IS_PROCTOR = "Yes"
+IS_NOT_PROCTOR = "No"
 
 
-class ShopUser:
+class ShopUser(object):
     """ Stores and processes a shop user's data.
         Note that all changes to shop users must go through the database.
     """
-    def __init__(self, user_data=(NONEXISTENT_USER, INVALID_TEST_DATE, "ignored_data", "null", "0000000", 0, False)):
+    def __init__(self,
+                 user_data=(NONEXISTENT_USER, INVALID_TEST_DATE, "ignored_data", "null", "0000000", 0, False),):
         self.validated_user_data = self._validate_user_data(user_data)
 
         self.id_number = self.validated_user_data[ID]
@@ -40,20 +44,19 @@ class ShopUser:
         return difference_in_years == 0
 
     def _validate_user_data(self, user_data):
+        validated_user_data = []
+        for datum in user_data:
+            validated_user_data.append(datum)
 
-        # TODO: strip whitespace
         try:
-            test_date = dateutil.parser.parse(cell_value_test_date)
-            debt = int(float(cell_value_debt))
-            proctor = (proctorliness == PROCTOR)
+            validated_user_data
+            validated_user_data[TEST_DATE] = dateutil.parser.parse(user_data[TEST_DATE])
+            validated_user_data[DEBT] = int(float(user_data[DEBT]))
+            validated_user_data[PROCTOR] = user_data[PROCTOR] == IS_PROCTOR
         except ValueError:
-            # TODO: raise invalid user error
-            # TODO: where to catch said error?
-            pass
+            raise InvalidUserError  # TODO: where to catch this error?
         else:
-            pass
-
-        return []
+            return validated_user_data
 
     def __eq__(self, other):
         if (self.__class__ == other.__class__ and

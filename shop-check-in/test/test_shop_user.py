@@ -2,7 +2,7 @@ import shop_user
 import sample_users
 
 
-class TestShopUser:
+class TestShopUser(object):
 
     def test_is_shop_certified_failure_unauthorized(self):
         assert sample_users.USER_INVALID.is_shop_certified() is False

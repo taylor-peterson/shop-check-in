@@ -6,7 +6,7 @@ import winsound
 DEFAULT_ERROR_MESSAGE = "Action not recognized."
 
 
-class ErrorHandler():
+class ErrorHandler(object):
     def __init__(self, event_q):
         self._event_q = event_q
 

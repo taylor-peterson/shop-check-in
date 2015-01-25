@@ -1,11 +1,12 @@
 import Queue
 
-import serial_connection_moderator
+import io_moderator
 
-class TestSerialConnectionModerator:
+
+class TestIoModerator(object):
 
     def test_construction(self):
         event_q = Queue.Queue()
         message_q = Queue.Queue()
 
-        serial_connection_moderator.SerialConnectionModerator(event_q, message_q)
+        io_moderator.IoModerator(event_q, message_q)

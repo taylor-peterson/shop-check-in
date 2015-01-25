@@ -1,5 +1,3 @@
-import Queue as queue
-
 import gspread
 
 import shop_user_database
@@ -9,14 +7,13 @@ REAL_USER_ROW = 7
 FAKE_USER_ROW = 6
 
 
-class TestShopUserDatabase:
+class TestShopUserDatabase(object):
 
     # TODO: add tests for __init__ without internet - how to test this automatically?
         #
 
     def setup_class(cls):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
         
         try:
             shop_user_db._worksheet.update_cell(
@@ -35,8 +32,7 @@ class TestShopUserDatabase:
             assert False  # Failed to initialize database.
 
     def test_get_real_user(self):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
         shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
         user = event_q.get().data
@@ -44,8 +40,7 @@ class TestShopUserDatabase:
         assert user == sample_users.USER_CERTIFIED
 
     def test_get_nonexistent_user(self):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
         
         shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
         user = event_q.get().data
@@ -53,8 +48,7 @@ class TestShopUserDatabase:
         assert user == sample_users.USER_INVALID
 
     def test_increase_debt_success(self):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
         shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
         user = event_q.get().data
@@ -65,8 +59,7 @@ class TestShopUserDatabase:
         assert user_debt == user.debt
 
     def test_increase_debt_failure(self):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
         shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
         user = event_q.get().data
@@ -79,8 +72,7 @@ class TestShopUserDatabase:
             assert False
 
     def test_clear_debt_success(self):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
         shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
         user = event_q.get().data
@@ -90,8 +82,7 @@ class TestShopUserDatabase:
         assert user.debt == 0
 
     def test_clear_debt_failure(self):
-        event_q = queue.Queue()
-        shop_user_db = shop_user_database.ShopUserDatabase(event_q, "Python Testing")
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
         shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
         user = event_q.get().data

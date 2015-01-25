@@ -5,7 +5,7 @@ FIRST_SLOT = 0
 LAST_SLOT = 29
 
 
-class TestShop:
+class TestShop(object):
 
     def test_open_failure_not_proctor(self):
         machine_shop = shop.Shop()

@@ -11,7 +11,7 @@ ID_STRING_TWO_SEPARATED = ";40155181\x00 gibberish ;40155181\x00"
     # Plus, doing so wouldn't be proper as it could have unwanted side-effects.
 
 
-class TestIdLogger():
+class TestIdLogger(object):
 
     def test_id_logger_none(self):
         assert False

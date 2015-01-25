@@ -1,7 +1,7 @@
 SLOTS = xrange(30)
 
 
-class Shop:
+class Shop(object):
     def __init__(self):
         self._open = False
         self._pods = []

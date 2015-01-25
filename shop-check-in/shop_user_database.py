@@ -1,20 +1,16 @@
-import cPickle as pickle
+import cPickle
 
-import gspread  # Google Spreadsheets Python API
+import gspread
 import gspread.exceptions
 
-import event
 import shop_user
-
-PROCTOR = "Yes"
 
 DEBT_INCREMENT = 3
 
 
-class ShopUserDatabase():
+class ShopUserDatabase(object):
 
-    def __init__(self, event_q):
-        self._event_q = event_q
+    def __init__(self):
         self._shop_user_database = {}
         self._out_of_sync_users = []
 
@@ -31,12 +27,9 @@ class ShopUserDatabase():
 
     def get_shop_user(self, id_number):
         try:
-            user = self._shop_user_database[id_number]
+            return self._shop_user_database[id_number]
         except KeyError:
-            user = self._get_shop_user_from_google_spreadsheet()  # Raises NonexistentUserError if not found.
-
-        card_swipe_event = event.Event(event.CARD_SWIPE, user)
-        self._event_q.put(card_swipe_event)
+            return self._get_shop_user_from_google_spreadsheet()  # Raises NonexistentUserError if not found.
 
     def increase_debt(self, user):
         self._change_debt(user, user.debt + DEBT_INCREMENT)
@@ -70,7 +63,7 @@ class ShopUserDatabase():
         try:
             self._connect_to_google_spreadsheet()
         except _CannotAccessGoogleSpreadsheetsError:
-            return shop_user.ShopUser()
+            return NonexistentUserError
 
         try:
             user_data = _ShopUserDatabaseGoogleWorksheet.get_shop_user_data(id_number)
@@ -102,7 +95,14 @@ class ShopUserDatabase():
                 self._out_of_sync_users = []
 
 
-class _ShopUserDatabaseGoogleWorksheet():
+class ShopUserDatabaseTesting(ShopUserDatabase):
+
+    def __init__(self):
+        super(ShopUserDatabaseTesting, self).__init__()
+        self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet("Python Testing")
+
+
+class _ShopUserDatabaseGoogleWorksheet(object):
 
     def __init__(self, spreadsheet="Shop Users", worksheet="Raw Data"):
         google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
@@ -130,7 +130,7 @@ class _ShopUserDatabaseGoogleWorksheet():
         self._worksheet.update_cell(row, col, new_debt)
 
 
-class _ShopUserDatabaseLocal():
+class _ShopUserDatabaseLocal(object):
 
     def __init__(self,
                  database_file_path="shop_user_database_local.pkl",
@@ -152,13 +152,13 @@ class _ShopUserDatabaseLocal():
 
     def _load_file(self, file_path):
         with open(file_path, 'rb') as file_:
-            return pickle.load(file_)
+            return cPickle.load(file_)
 
     def _dump_file(self, file_path, dumpee):
         self._erase_file(file_path)
 
         with open(file_path, 'wb') as file_:
-            pickle.dump(dumpee, file_)
+            cPickle.dump(dumpee, file_)
 
     def _erase_file(self, file_path):
         with open(file_path, "wb") as file_:

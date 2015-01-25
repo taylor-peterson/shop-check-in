@@ -29,7 +29,7 @@ CHANGING_POD = "changing pod"
 # TODO: clarify exceptions for proctors - either no safety test or not hired as proctor?
 
 
-class BoardFsm():
+class BoardFsm(object):
 
     def __init__(self, event_q, shop_user_db):
         self._state = CLOSED
