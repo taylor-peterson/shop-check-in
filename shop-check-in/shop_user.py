@@ -49,7 +49,6 @@ class ShopUser(object):
             validated_user_data.append(datum)
 
         try:
-            validated_user_data
             validated_user_data[TEST_DATE] = dateutil.parser.parse(user_data[TEST_DATE])
             validated_user_data[DEBT] = int(float(user_data[DEBT]))
             validated_user_data[PROCTOR] = user_data[PROCTOR] == IS_PROCTOR

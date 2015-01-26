@@ -5,10 +5,10 @@ import event
 import fsm
 import sample_users
 
-CARD_SWIPE_POD = event.Event(event.CARD_SWIPE, sample_users.USER_POD)
-CARD_SWIPE_PROCTOR = event.Event(event.CARD_SWIPE, sample_users.USER_PROCTOR)
-CARD_SWIPE_CERTIFIED = event.Event(event.CARD_SWIPE, sample_users.USER_CERTIFIED)
-CARD_SWIPE_INVALID = event.Event(event.CARD_SWIPE, sample_users.USER_INVALID)
+CARD_SWIPE_POD = event.Event(event.CARD_SWIPE, sample_users.USER_POD.id_number)
+CARD_SWIPE_PROCTOR = event.Event(event.CARD_SWIPE, sample_users.USER_PROCTOR.id_number)
+CARD_SWIPE_CERTIFIED = event.Event(event.CARD_SWIPE, sample_users.USER_CERTIFIED.id_number)
+CARD_SWIPE_INVALID = event.Event(event.CARD_SWIPE, sample_users.USER_INVALID.id_number)
 
 CARD_INSERT = event.Event(event.CARD_INSERT, 5)
 CARD_REMOVE = event.Event(event.CARD_REMOVE, 5)
@@ -99,11 +99,13 @@ class TestFsmDataOperations(object):
 
 class TestFsmStateTransitions:
 
+    # TODO: make sure the sample users are in the test spreadsheet
+
     def test_closed_invalid_events(self):
         event_q = queue.Queue()
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
         board = fsm.BoardFsm(event_q, shop_user_db)
-        
+
         event_q.put(CARD_INSERT)
         event_q.put(BUTTON_CONFIRM)
         event_q.put(CARD_REMOVE)
@@ -492,8 +494,6 @@ class TestFsmStateTransitions:
         print
 
     def test_clearing_debt_invalid_swipe(self):
-        assert True is False  # TODO spoofed database doesn't check for validity
-        
         event_q = queue.Queue()
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
         board = fsm.BoardFsm(event_q, shop_user_db)

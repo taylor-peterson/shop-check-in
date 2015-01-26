@@ -10,13 +10,12 @@ DEBT_INCREMENT = 3
 
 class ShopUserDatabase(object):
 
-    def __init__(self):
+    def __init__(self, worksheet_name="Shop Users"):
         self._shop_user_database = {}
         self._out_of_sync_users = []
+        self._worksheet_name = worksheet_name
 
         self._shop_user_database_google_worksheet = None
-        self._connect_to_google_spreadsheet()
-
         self._shop_user_database_local = _ShopUserDatabaseLocal()
 
         self._initialize_database()
@@ -29,7 +28,7 @@ class ShopUserDatabase(object):
         try:
             return self._shop_user_database[id_number]
         except KeyError:
-            return self._get_shop_user_from_google_spreadsheet()  # Raises NonexistentUserError if not found.
+            return self._get_shop_user_from_google_spreadsheet(id_number)  # Raises NonexistentUserError if not found.
 
     def increase_debt(self, user):
         self._change_debt(user, user.debt + DEBT_INCREMENT)
@@ -39,7 +38,7 @@ class ShopUserDatabase(object):
 
     def _change_debt(self, user, new_debt):
         try:
-            self._shop_user_database[user.id_number][shop_user.DEBT] = new_debt
+            self._shop_user_database[user.id_number].debt = new_debt
         except KeyError:
             raise NonexistentUserError
         else:
@@ -49,7 +48,7 @@ class ShopUserDatabase(object):
     def _connect_to_google_spreadsheet(self):
         if self._shop_user_database_google_worksheet is None:
             try:
-                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet()
+                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._worksheet_name)
             except (gspread.AuthenticationError, IOError):
                 raise _CannotAccessGoogleSpreadsheetsError
         else:
@@ -98,8 +97,7 @@ class ShopUserDatabase(object):
 class ShopUserDatabaseTesting(ShopUserDatabase):
 
     def __init__(self):
-        super(ShopUserDatabaseTesting, self).__init__()
-        self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet("Python Testing")
+        super(ShopUserDatabaseTesting, self).__init__("Python Testing")
 
 
 class _ShopUserDatabaseGoogleWorksheet(object):
@@ -108,7 +106,7 @@ class _ShopUserDatabaseGoogleWorksheet(object):
         google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
         self._worksheet = google_account.open(spreadsheet).worksheet(worksheet)
 
-    def get_shop_user_database(self):
+    def load_shop_user_database(self):
         raw_data = self._worksheet.get_all_values()
         shop_users = [shop_user.ShopUser(shop_user_data) for shop_user_data in raw_data]
         shop_user_database = {user.id_number: user for user in shop_users}
@@ -119,10 +117,10 @@ class _ShopUserDatabaseGoogleWorksheet(object):
         return self._worksheet.row_values(cell_id_number.row)
 
     def test_connection(self):
-        self._worksheet.cell(0, 0)
+        self._worksheet.cell(1, 1)
 
     def update_user(self, user):
-        self._change_debt(user)
+        self._change_debt(user.id_number, user.debt)
 
     def _change_debt(self, id_number, new_debt):
         row = self._worksheet.find(id_number).row
@@ -133,8 +131,8 @@ class _ShopUserDatabaseGoogleWorksheet(object):
 class _ShopUserDatabaseLocal(object):
 
     def __init__(self,
-                 database_file_path="shop_user_database_local.pkl",
-                 out_of_date_users_file_path="out_of_date_users.pkl"):
+                 database_file_path=r"D:\Google Drive\Employment\Machine Shop Documents\Automated Check-In\Code\shop-check-in\shop_user_database_local.pkl",
+                 out_of_date_users_file_path=r"D:\Google Drive\Employment\Machine Shop Documents\Automated Check-In\Code\shop-check-in\out_of_sync_users.pkl"):
         self._database_file_path = database_file_path
         self._out_of_date_users_file_path = out_of_date_users_file_path
 

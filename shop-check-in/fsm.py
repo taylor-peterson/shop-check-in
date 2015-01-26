@@ -115,11 +115,15 @@ class BoardFsm(object):
         return CHANGING_POD, None
 
     def _closed_process_card_swipe(self, id_number, ignored_cargo):
-        user = self._shop_user_database.get_shop_user(id_number)
-        if user.is_proctor():
-            return OPENING, user
-        else:
+        try:
+            user = self._shop_user_database.get_shop_user(id_number)
+        except shop_user_database.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+        else:
+            if user.is_proctor():
+                return OPENING, user
+            else:
+                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
     def _opening_process_switch_flip(self, ignored_event_data, user):
         self._shop.open_(user)
@@ -127,19 +131,26 @@ class BoardFsm(object):
         return STANDBY, None
 
     def _standby_process_card_swipe(self, id_number, ignored_cargo):
-        user = self._shop_user_database.get_shop_user(id_number)
-        if self._shop.is_pod(user):
-            return UNLOCKED, user
-        else:
+        try:
+            user = self._shop_user_database.get_shop_user(id_number)
+        except shop_user_database.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+        else:
+            if self._shop.is_pod(user):
+                return UNLOCKED, user
+            else:
+                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
 
     def _unlocked_process_card_swipe(self, id_number, ignored_cargo):
-        user = self._shop_user_database.get_shop_user(id_number)
-
-        if user.is_shop_certified():
-            return ADDING_USER, [user]
-        else:
+        try:
+            user = self._shop_user_database.get_shop_user(id_number)
+        except shop_user_database.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+        else:
+            if user.is_shop_certified():
+                return ADDING_USER, [user]
+            else:
+                return self._error_handler.handle_error(self._state, shop.UnauthorizedUserError), ignored_cargo
 
     def _unlocked_process_closing_shop(self, ignored_event_data, user):
         try:
@@ -150,12 +161,15 @@ class BoardFsm(object):
             return CLOSED, None
 
     def _adding_user_process_card_swipe(self, id_number, first_user):
-        second_user = self._shop_user_database.get_shop_user(id_number)
-
-        if second_user.is_shop_certified():
-            return ADDING_USERS, first_user + [second_user]
+        try:
+            second_user = self._shop_user_database.get_shop_user(id_number)
+        except shop_user_database.NonexistentUserError:
+            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), id_number
         else:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), first_user
+            if second_user.is_shop_certified():
+                return ADDING_USERS, first_user + [second_user]
+            else:
+                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), first_user
 
     def _adding_user_s_process_slot(self, slot, user_s):
         self._shop.add_user_s_to_slot(user_s, slot)
@@ -178,26 +192,32 @@ class BoardFsm(object):
         return STANDBY, None
 
     def _clearing_debt_process_card_swipe(self, id_number, ignored_cargo):
-        user = self._shop_user_database.get_shop_user(id_number)
-
         try:
-            self._shop_user_database.clear_debt(user)
+            user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
         else:
-            return STANDBY, user
+            try:
+                self._shop_user_database.clear_debt(user)
+            except shop_user_database.NonexistentUserError:
+                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+            else:
+                return STANDBY, user
 
     def _changing_pod_process_card_swipe(self, id_number, ignored_cargo):
-        user = self._shop_user_database.get_shop_user(id_number)
-
         try:
-            self._shop.change_pod(user)
-        except shop.PodRequiredError:
-            return self._error_handler.handle_error(self._state, "pod_required"), ignored_cargo
-        except shop.UnauthorizedUserError:
+            user = self._shop_user_database.get_shop_user(id_number)
+        except shop_user_database.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
         else:
-            return STANDBY, None
+            try:
+                self._shop.change_pod(user)
+            except shop.PodRequiredError:
+                return self._error_handler.handle_error(self._state, "pod_required"), ignored_cargo
+            except shop.UnauthorizedUserError:
+                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+            else:
+                return STANDBY, None
 
 
 def main():
