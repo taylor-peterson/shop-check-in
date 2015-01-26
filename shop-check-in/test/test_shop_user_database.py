@@ -34,24 +34,21 @@ class TestShopUserDatabase(object):
     def test_get_real_user(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
-        shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
-        user = event_q.get().data
+        user = shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
 
         assert user == sample_users.USER_CERTIFIED
 
     def test_get_nonexistent_user(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
         
-        shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
-        user = event_q.get().data
+        user = shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
 
         assert user == sample_users.USER_INVALID
 
     def test_increase_debt_success(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
-        shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
-        user = event_q.get().data
+        user = shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
 
         user_debt = user.debt + shop_user_database.DEBT_INCREMENT
         shop_user_db.increase_debt(user)
@@ -61,8 +58,7 @@ class TestShopUserDatabase(object):
     def test_increase_debt_failure(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
-        shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
-        user = event_q.get().data
+        user = shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
 
         try:
             shop_user_db.increase_debt(user)
@@ -74,8 +70,7 @@ class TestShopUserDatabase(object):
     def test_clear_debt_success(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
-        shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
-        user = event_q.get().data
+        user = shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
         shop_user_db.increase_debt(user)
         shop_user_db.clear_debt(user)
 
@@ -84,8 +79,7 @@ class TestShopUserDatabase(object):
     def test_clear_debt_failure(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
-        shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
-        user = event_q.get().data
+        user = shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
 
         try:
             shop_user_db.clear_debt(user)

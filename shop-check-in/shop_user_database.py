@@ -63,10 +63,10 @@ class ShopUserDatabase(object):
         try:
             self._connect_to_google_spreadsheet()
         except _CannotAccessGoogleSpreadsheetsError:
-            return NonexistentUserError
+            raise NonexistentUserError
 
         try:
-            user_data = _ShopUserDatabaseGoogleWorksheet.get_shop_user_data(id_number)
+            user_data = self._shop_user_database_google_worksheet.get_shop_user_data(id_number)
         except (gspread.exceptions.CellNotFound, IOError):
             raise NonexistentUserError
         else:
