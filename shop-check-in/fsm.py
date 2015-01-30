@@ -161,7 +161,7 @@ class BoardFsm(object):
     def _unlocked_process_closing_shop(self, ignored_event_data, user):
         try:
             self._shop.close_(user)
-        except shop.ShopOccupiedError:
+        except shop_check_in_exceptions.ShopOccupiedError:
             return self._error_handler.handle_error(self._state, "shop_occupied"), user
         else:
             return CLOSED, None
@@ -220,10 +220,8 @@ class BoardFsm(object):
         else:
             try:
                 self._shop.change_pod(user)
-            except shop.PodRequiredError:
+            except shop_check_in_exceptions.ShopCheckInError:
                 return self._error_handler.handle_error(self._state, "pod_required"), ignored_cargo
-            except shop.UnauthorizedUserError:
-                return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
             else:
                 return STANDBY, None
 

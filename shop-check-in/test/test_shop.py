@@ -32,7 +32,7 @@ class TestShop(object):
 
         try:
             machine_shop.open_(sample_users.USER_POD)
-        except shop.ShopAlreadyOpenError:
+        except shop_check_in_exceptions.ShopAlreadyOpenError:
             assert machine_shop._open
             assert machine_shop.is_pod(sample_users.USER_POD)
         else:
@@ -45,7 +45,7 @@ class TestShop(object):
 
         try:
             machine_shop.close_(sample_users.USER_POD)
-        except shop.ShopOccupiedError:
+        except shop_check_in_exceptions.ShopOccupiedError:
             assert machine_shop._open
             assert machine_shop.is_pod(sample_users.USER_POD)
             assert not machine_shop._empty()
@@ -57,7 +57,7 @@ class TestShop(object):
 
         try:
             machine_shop.close_(sample_users.USER_PROCTOR)
-        except shop.UnauthorizedUserError:
+        except shop_check_in_exceptions.UnauthorizedUserError:
             assert machine_shop._open
             assert machine_shop.is_pod(sample_users.USER_POD)
             assert not machine_shop._empty()
@@ -196,7 +196,7 @@ class TestShop(object):
 
         try:
             machine_shop.change_pod(sample_users.USER_POD)
-        except shop.PodRequiredError:
+        except shop_check_in_exceptions.PodRequiredError:
             assert machine_shop.is_pod(sample_users.USER_POD)
         else:
             assert False

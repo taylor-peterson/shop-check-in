@@ -1,3 +1,5 @@
+import shop_check_in_exceptions
+
 SLOTS = xrange(30)
 
 
@@ -11,19 +13,17 @@ class Shop(object):
         if user.is_proctor() and not self._open:
             self._open = True
             self._pods.append(user)
-        elif not user.is_proctor():
-            raise UnauthorizedUserError
         else:
-            raise ShopAlreadyOpenError
+            raise shop_check_in_exceptions.ShopAlreadyOpenError
 
     def close_(self, user):
         if self.is_pod(user) and self._empty():
             self._pods = []
             self._open = False
         elif not self.is_pod(user):
-            raise UnauthorizedUserError
+            raise shop_check_in_exceptions.UnauthorizedUserError
         else:
-            raise ShopOccupiedError
+            raise shop_check_in_exceptions.ShopOccupiedError
     
     def is_pod(self, user):
         return user in self._pods
@@ -31,8 +31,6 @@ class Shop(object):
     def add_user_s_to_slot(self, user_s, slot):
         if all(user.is_shop_certified() for user in user_s):
             self._occupants[slot] = user_s
-        else:
-            raise UnauthorizedUserError
 
     def replace_or_transfer_user(self, slot, prev_slot):
         if slot != prev_slot:
@@ -52,25 +50,7 @@ class Shop(object):
         elif self.is_pod(user) and len(self._pods) > 1:
             self._pods.remove(user)
         elif self.is_pod(user):
-            raise PodRequiredError
-        else:
-            raise UnauthorizedUserError
+            raise shop_check_in_exceptions.PodRequiredError
 
     def _empty(self):
         return all(self._occupants[slot] == [] for slot in SLOTS)
-
-
-class PodRequiredError(Exception):
-    pass
-
-
-class ShopAlreadyOpenError(Exception):
-    pass
-
-
-class UnauthorizedUserError(Exception):
-    pass
-
-
-class ShopOccupiedError(Exception):
-    pass
