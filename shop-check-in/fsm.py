@@ -9,6 +9,7 @@ import shop
 import shop_user
 import shop_user_database
 import io_moderator
+import shop_check_in_exceptions
 
 MESSAGE = 0
 ACTIONS_DICT = 1
@@ -118,12 +119,15 @@ class BoardFsm(object):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
-            if user.is_proctor():
-                return OPENING, user
+            try:
+                user.is_proctor()
+            except shop_check_in_exceptions.ShopUserError:
+                return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
             else:
-                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+                return OPENING, user
+
 
     def _opening_process_switch_flip(self, ignored_event_data, user):
         self._shop.open_(user)
@@ -134,23 +138,25 @@ class BoardFsm(object):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             if self._shop.is_pod(user):
                 return UNLOCKED, user
             else:
-                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+                return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
 
     def _unlocked_process_card_swipe(self, id_number, ignored_cargo):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
-        else:
-            if user.is_shop_certified():
-                return ADDING_USER, [user]
-            else:
+            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
+        else:  # TODO: refactor these nested try/except blocks
+            try:
+                user.is_shop_certified()
+            except shop_check_in_exceptions.ShopUserError:
                 return self._error_handler.handle_error(self._state, shop.UnauthorizedUserError), ignored_cargo
+            else:
+                return ADDING_USER, [user]
 
     def _unlocked_process_closing_shop(self, ignored_event_data, user):
         try:
@@ -164,12 +170,14 @@ class BoardFsm(object):
         try:
             second_user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), id_number
+            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), id_number
         else:
-            if second_user.is_shop_certified():
-                return ADDING_USERS, first_user + [second_user]
+            try:
+                second_user.is_shop_certified()
+            except shop_check_in_exceptions.ShopUserError:
+                return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), first_user
             else:
-                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), first_user
+                return ADDING_USERS, first_user + [second_user]
 
     def _adding_user_s_process_slot(self, slot, user_s):
         self._shop.add_user_s_to_slot(user_s, slot)
@@ -195,12 +203,12 @@ class BoardFsm(object):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             try:
                 self._shop_user_database.clear_debt(user)
             except shop_user_database.NonexistentUserError:
-                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+                return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
             else:
                 return STANDBY, user
 
@@ -208,14 +216,14 @@ class BoardFsm(object):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
         except shop_user_database.NonexistentUserError:
-            return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             try:
                 self._shop.change_pod(user)
             except shop.PodRequiredError:
                 return self._error_handler.handle_error(self._state, "pod_required"), ignored_cargo
             except shop.UnauthorizedUserError:
-                return self._error_handler.handle_error(self._state, shop_user.NONEXISTENT_USER), ignored_cargo
+                return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
             else:
                 return STANDBY, None
 

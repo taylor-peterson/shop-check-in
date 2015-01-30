@@ -3,6 +3,8 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import dateutil.parser
 
+import shop_check_in_exceptions
+
 NAME = 0
 TEST_DATE = 1
 EMAIL = 3
@@ -10,8 +12,13 @@ ID = 4
 DEBT = 5
 PROCTOR = 6
 
-NONEXISTENT_USER = "nonexistent_user"
+DEFAULT_NAME = "nonexistent_user"
 INVALID_TEST_DATE = "1970-03-22"
+IGNORED_DATA = "ignored_data"
+DEFAULT_EMAIL = "nope"
+DEFAULT_ID_NUMBER = "0000000"
+DEFAULT_DEBT = 0
+DEFAULT_PROCTORLINESS = False
 
 IS_PROCTOR = "Yes"
 IS_NOT_PROCTOR = "No"
@@ -22,7 +29,13 @@ class ShopUser(object):
         Note that all changes to shop users must go through the database.
     """
     def __init__(self,
-                 user_data=(NONEXISTENT_USER, INVALID_TEST_DATE, "ignored_data", "null", "0000000", 0, False),):
+                 user_data=(DEFAULT_NAME,
+                            INVALID_TEST_DATE,
+                            IGNORED_DATA,
+                            DEFAULT_DEBT,
+                            DEFAULT_ID_NUMBER,
+                            DEFAULT_DEBT,
+                            DEFAULT_PROCTORLINESS),):
         self.validated_user_data = self._validate_user_data(user_data)
 
         self.id_number = self.validated_user_data[ID]
@@ -33,10 +46,19 @@ class ShopUser(object):
         self._proctor = self.validated_user_data[PROCTOR]
 
     def is_shop_certified(self):
-        return self._name is not NONEXISTENT_USER and self._has_valid_safety_test()  # TODO: break out money owed vs. no safety test
+        if self._name is DEFAULT_NAME:
+            raise shop_check_in_exceptions.InvalidUserError
+        elif not self._has_valid_safety_test():
+            raise shop_check_in_exceptions.OutOfDateTestError
+        elif self.debt != 0:
+            raise shop_check_in_exceptions.MoneyOwedError
+        else:
+            return True
 
     def is_proctor(self):
-        return self.is_shop_certified() and self._proctor
+        if not self._proctor:
+            raise shop_check_in_exceptions.NonProctorError
+        return self.is_shop_certified()
 
     def _has_valid_safety_test(self):
         today = datetime.date.today()
@@ -53,7 +75,7 @@ class ShopUser(object):
             validated_user_data[DEBT] = int(float(user_data[DEBT]))
             validated_user_data[PROCTOR] = user_data[PROCTOR] == IS_PROCTOR
         except ValueError:
-            raise InvalidUserError  # TODO: where to catch this error?
+            raise shop_check_in_exceptions.InvalidUserError  # TODO: where to catch this error?
         else:
             return validated_user_data
 
@@ -70,5 +92,3 @@ class ShopUser(object):
             return False
 
 
-class InvalidUserError(Exception):
-    pass

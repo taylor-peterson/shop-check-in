@@ -1,5 +1,6 @@
 import shop
 import sample_users
+import shop_check_in_exceptions
 
 FIRST_SLOT = 0
 LAST_SLOT = 29
@@ -12,7 +13,7 @@ class TestShop(object):
 
         try:
             machine_shop.open_(sample_users.USER_CERTIFIED)
-        except shop.UnauthorizedUserError:
+        except shop_check_in_exceptions.NonProctorError:
             assert not machine_shop._open
             assert not machine_shop.is_pod(sample_users.USER_CERTIFIED)
         else:
@@ -109,7 +110,7 @@ class TestShop(object):
 
         try:
             machine_shop.add_user_s_to_slot([sample_users.USER_INVALID], FIRST_SLOT)
-        except shop.UnauthorizedUserError:
+        except shop_check_in_exceptions.InvalidUserError:
             assert machine_shop._empty
         else:
             assert False
@@ -120,7 +121,7 @@ class TestShop(object):
 
         try:
             machine_shop.add_user_s_to_slot([sample_users.USER_CERTIFIED, sample_users.USER_INVALID], FIRST_SLOT)
-        except shop.UnauthorizedUserError:
+        except shop_check_in_exceptions.InvalidUserError:
             assert machine_shop._empty
         else:
             assert False
@@ -131,7 +132,7 @@ class TestShop(object):
 
         try:
             machine_shop.add_user_s_to_slot([sample_users.USER_INVALID, sample_users.USER_INVALID], FIRST_SLOT)
-        except shop.UnauthorizedUserError:
+        except shop_check_in_exceptions.InvalidUserError:
             assert machine_shop._empty
         else:
             assert False
@@ -206,7 +207,7 @@ class TestShop(object):
 
         try:
             machine_shop.change_pod(sample_users.USER_CERTIFIED)
-        except shop.UnauthorizedUserError:
+        except shop_check_in_exceptions.NonProctorError:
             assert not machine_shop.is_pod(sample_users.USER_CERTIFIED)
         else:
             assert False

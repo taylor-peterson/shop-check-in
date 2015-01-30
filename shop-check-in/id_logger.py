@@ -40,7 +40,7 @@ class IdLogger(threading.Thread):
         if search_result is not None:
             id_number = search_result.group()[2:-2]
 
-            new_event = event_data.Event(event_data.CARD_SWIPE, id_number)
+            new_event = event.Event(event.CARD_SWIPE, id_number)
             self._event_q.put(new_event)
 
     def _add_char_to_buffer(self, char):

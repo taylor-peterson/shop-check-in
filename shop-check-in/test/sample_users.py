@@ -18,3 +18,5 @@ USER_JUST_IN_DATE = shop_user.ShopUser(["Joe Schmoe", VALID_TEST_DATE_BARELY, ""
 USER_JUST_OUT_OF_DATE = shop_user.ShopUser(["Joe Schmoe", INVALID_TEST_DATE_BARELY, "", "email", "0", 0, shop_user.IS_NOT_PROCTOR])
 USER_WAY_OUT_OF_DATE = shop_user.ShopUser(["Joe Schmoe", shop_user.INVALID_TEST_DATE, "", "email", "0", 0, shop_user.IS_NOT_PROCTOR])
 USER_PROCTOR_OUT_OF_DATE = shop_user.ShopUser(["Joe Schmoe", shop_user.INVALID_TEST_DATE, "", "email", "0", 0, shop_user.IS_PROCTOR])
+
+USER_OWES_MONEY = shop_user.ShopUser(["Joe Schmoe", VALID_TEST_DATE, "", "email", "7777777", 1, shop_user.IS_NOT_PROCTOR])
