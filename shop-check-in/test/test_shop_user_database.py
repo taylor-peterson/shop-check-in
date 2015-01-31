@@ -1,8 +1,8 @@
-import gspread
+from test import sample_users
 
 import shop_user_database
-import shop_user
-import sample_users
+import shop_check_in_exceptions
+
 
 REAL_USER_ROW = 7
 FAKE_USER_ROW = 6
@@ -49,7 +49,7 @@ class TestShopUserDatabase(object):
 
         try:
             user = shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             assert True
         else:
             assert False
@@ -73,7 +73,7 @@ class TestShopUserDatabase(object):
 
         try:
             shop_user_db.increase_debt(user)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             assert True
         else:
             assert True
@@ -94,7 +94,7 @@ class TestShopUserDatabase(object):
 
         try:
             shop_user_db.clear_debt(user)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             assert True
         else:
             assert False

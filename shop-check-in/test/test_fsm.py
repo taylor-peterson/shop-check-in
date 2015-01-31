@@ -1,9 +1,9 @@
 import Queue as queue
+from test import sample_users
 
 import shop_user_database
 import event
 import fsm
-import sample_users
 
 CARD_SWIPE_POD = event.Event(event.CARD_SWIPE, sample_users.USER_POD.id_number)
 CARD_SWIPE_PROCTOR = event.Event(event.CARD_SWIPE, sample_users.USER_PROCTOR.id_number)
@@ -93,13 +93,13 @@ class TestFsmDataOperations(object):
         # should remove correct proctor
         # log should have correct info
 
-    # have to add check to make sure user has no debt and is
-    # certified before letting them work
+    # TODO: have to add check to make sure user has no debt and is certified before letting them work
 
 
 class TestFsmStateTransitions:
 
     # TODO: make sure the sample users are in the test spreadsheet
+    # TODO: add timeouts as the state machine won't terminate if it is broken
 
     def test_closed_invalid_events(self):
         event_q = queue.Queue()

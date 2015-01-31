@@ -26,8 +26,8 @@ CHANGING_POD = "changing pod"
 
 # TODO: refactor FSM logic into separate class? (e.g. state, run_fsm)
 # TODO: any clean way to avoid unused function parameters?
-# TODO: get rid of unauthorized user error catching?
-# TODO: clarify exceptions for proctors - either no safety test or not hired as proctor?
+# TODO: run noises on separate thread
+# TODO: better way to handle 1-2 users
 
 
 class BoardFsm(object):
@@ -50,7 +50,7 @@ class BoardFsm(object):
             STANDBY: ("\nShop open. Board locked\n\rPOD swipe to unlock.",
                       {event.CARD_SWIPE: self._standby_process_card_swipe}),
 
-            UNLOCKED: ("\nBoard Unlcked.\n\rAll inputs available.",
+            UNLOCKED: ("\nBoard Unlocked.\n\rAll inputs available.",
                        {event.BUTTON_CANCEL: self._go_to_standby_state,
                         event.CARD_SWIPE: self._unlocked_process_card_swipe,
                         event.CARD_REMOVE: self._go_to_remove_user_state,
@@ -118,7 +118,7 @@ class BoardFsm(object):
     def _closed_process_card_swipe(self, id_number, ignored_cargo):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             try:
@@ -128,7 +128,6 @@ class BoardFsm(object):
             else:
                 return OPENING, user
 
-
     def _opening_process_switch_flip(self, ignored_event_data, user):
         self._shop.open_(user)
         # TODO: old-school mac startup sound
@@ -137,7 +136,7 @@ class BoardFsm(object):
     def _standby_process_card_swipe(self, id_number, ignored_cargo):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             if self._shop.is_pod(user):
@@ -148,7 +147,7 @@ class BoardFsm(object):
     def _unlocked_process_card_swipe(self, id_number, ignored_cargo):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:  # TODO: refactor these nested try/except blocks
             try:
@@ -169,7 +168,7 @@ class BoardFsm(object):
     def _adding_user_process_card_swipe(self, id_number, first_user):
         try:
             second_user = self._shop_user_database.get_shop_user(id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), id_number
         else:
             try:
@@ -202,12 +201,12 @@ class BoardFsm(object):
     def _clearing_debt_process_card_swipe(self, id_number, ignored_cargo):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             try:
                 self._shop_user_database.clear_debt(user)
-            except shop_user_database.NonexistentUserError:
+            except shop_check_in_exceptions.NonexistentUserError:
                 return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
             else:
                 return STANDBY, user
@@ -215,7 +214,7 @@ class BoardFsm(object):
     def _changing_pod_process_card_swipe(self, id_number, ignored_cargo):
         try:
             user = self._shop_user_database.get_shop_user(id_number)
-        except shop_user_database.NonexistentUserError:
+        except shop_check_in_exceptions.NonexistentUserError:
             return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
         else:
             try:

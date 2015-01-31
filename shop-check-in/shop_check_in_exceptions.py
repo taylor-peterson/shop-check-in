@@ -50,3 +50,20 @@ class NonProctorError(ShopUserError):
     pass
 
 # endregion
+
+
+# region Shop User Database Errors
+
+class ShopUserDatabaseError(ShopCheckInError):
+    pass
+
+
+class NonexistentUserError(ShopUserDatabaseError):
+    pass
+
+
+class CannotAccessGoogleSpreadsheetsError(ShopUserDatabaseError):
+    pass
+
+# endregion
+

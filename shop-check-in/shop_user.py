@@ -65,6 +65,7 @@ class ShopUser(object):
         difference_in_years = relativedelta(today, self._test_date).years
         return difference_in_years == 0
 
+    # TODO: error handling/further validation?
     def _validate_user_data(self, user_data):
         validated_user_data = []
         for datum in user_data:

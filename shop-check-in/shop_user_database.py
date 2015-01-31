@@ -1,34 +1,47 @@
 import cPickle
+import os
 
 import gspread
 import gspread.exceptions
 
 import shop_user
+import shop_check_in_exceptions
 
 DEBT_INCREMENT = 3
+
+SPREADSHEET = "Shop Users"
+SPREADSHEET_TESTING = "Python Testing"
+WORKSHEET = "Raw Data"
+
+PATH_LOCAL_DATABASE = "shop_user_database_local.pkl"
+PATH_OUT_OF_SYNC_USERS = "out_of_sync_users.pkl"
+PATH_TESTING_LOCAL_DATABASE = "test\\shop_user_database_local.pkl"
+PATH_TESTING_OUT_OF_SYNC_USERS = "test\\out_of_sync_users.pkl"
+PATH_LOGIN_INFO = "sensitive_info.txt"
 
 
 class ShopUserDatabase(object):
 
-    def __init__(self, worksheet_name="Shop Users"):
+    def __init__(self, spreadsheet_name=SPREADSHEET,
+                 path_local_database=PATH_LOCAL_DATABASE,
+                 path_out_of_sync_users=PATH_OUT_OF_SYNC_USERS):
         self._shop_user_database = {}
         self._out_of_sync_users = []
-        self._worksheet_name = worksheet_name
+        self._spreadsheet_name = spreadsheet_name
 
         self._shop_user_database_google_worksheet = None
-        self._shop_user_database_local = _ShopUserDatabaseLocal()
+        self._shop_user_database_local = _ShopUserDatabaseLocal(path_local_database, path_out_of_sync_users)
 
         self._initialize_database()
 
     def __del__(self):
-        self._shop_user_database_local.dump_shop_user_database(self._shop_user_database)
-        self._shop_user_database_local.dump_out_of_sync_users(self._out_of_sync_users)
+        self._shop_user_database_local.dump_data(self._shop_user_database, self._out_of_sync_users)
 
     def get_shop_user(self, id_number):
         try:
             return self._shop_user_database[id_number]
         except KeyError:
-            return self._get_shop_user_from_google_spreadsheet(id_number)  # Raises NonexistentUserError if not found.
+            return self._get_shop_user_from_google_spreadsheet(id_number)
 
     def increase_debt(self, user):
         self._change_debt(user, user.debt + DEBT_INCREMENT)
@@ -40,7 +53,7 @@ class ShopUserDatabase(object):
         try:
             self._shop_user_database[user.id_number].debt = new_debt
         except KeyError:
-            raise NonexistentUserError
+            raise shop_check_in_exceptions.NonexistentUserError
         else:
             self._out_of_sync_users.append(user)
             self._synchronize_databases()
@@ -48,9 +61,9 @@ class ShopUserDatabase(object):
     def _connect_to_google_spreadsheet(self):
         if self._shop_user_database_google_worksheet is None:
             try:
-                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._worksheet_name)
+                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._spreadsheet_name)
             except (gspread.AuthenticationError, IOError):
-                raise _CannotAccessGoogleSpreadsheetsError
+                raise shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError
         else:
             try:
                 self._shop_user_database_google_worksheet.test_connection()
@@ -61,24 +74,19 @@ class ShopUserDatabase(object):
     def _get_shop_user_from_google_spreadsheet(self, id_number):
         try:
             self._connect_to_google_spreadsheet()
-        except _CannotAccessGoogleSpreadsheetsError:
-            raise NonexistentUserError
-
-        try:
             user_data = self._shop_user_database_google_worksheet.get_shop_user_data(id_number)
-        except (gspread.exceptions.CellNotFound, IOError):
-            raise NonexistentUserError
+        except (shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError, gspread.exceptions.CellNotFound, IOError):
+            raise shop_check_in_exceptions.NonexistentUserError
         else:
             user = shop_user.ShopUser(user_data)
             self._shop_user_database[user.id_number] = user
-
-        return user
+            return user
 
     def _initialize_database(self):
         try:
             self._connect_to_google_spreadsheet()
             self._shop_user_database = self._shop_user_database_google_worksheet.load_shop_user_database()
-        except (gspread.GSpreadException, _CannotAccessGoogleSpreadsheetsError):
+        except (gspread.GSpreadException, shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError):
             self._shop_user_database = self._shop_user_database_local.load_shop_user_database()
         else:
             self._out_of_sync_users = self._shop_user_database_local.load_out_of_sync_users()
@@ -86,6 +94,7 @@ class ShopUserDatabase(object):
 
     def _synchronize_databases(self):
             try:
+                self._connect_to_google_spreadsheet()
                 for user in self._out_of_sync_users:
                     self._shop_user_database_google_worksheet.update_user(user)
             except (gspread.GSpreadException, IOError):
@@ -97,13 +106,19 @@ class ShopUserDatabase(object):
 class ShopUserDatabaseTesting(ShopUserDatabase):
 
     def __init__(self):
-        super(ShopUserDatabaseTesting, self).__init__("Python Testing")
+        super(ShopUserDatabaseTesting, self).__init__(SPREADSHEET_TESTING,
+                                                      PATH_TESTING_LOCAL_DATABASE,
+                                                      PATH_TESTING_OUT_OF_SYNC_USERS)
 
 
 class _ShopUserDatabaseGoogleWorksheet(object):
 
-    def __init__(self, spreadsheet="Shop Users", worksheet="Raw Data"):
-        google_account = gspread.login('hmc.machine.shop@gmail.com', 'orangecow')
+    def __init__(self, spreadsheet=SPREADSHEET, worksheet=WORKSHEET):
+        login_info = self._get_login_info()
+        username = login_info["GOOGLE_USERNAME"]
+        password = login_info["GOOGLE_PASSWORD"]
+
+        google_account = gspread.login(username, password)
         self._worksheet = google_account.open(spreadsheet).worksheet(worksheet)
 
     def load_shop_user_database(self):
@@ -122,6 +137,10 @@ class _ShopUserDatabaseGoogleWorksheet(object):
     def update_user(self, user):
         self._change_debt(user.id_number, user.debt)
 
+    def _get_login_info(self):
+        with open(PATH_LOGIN_INFO, "r") as login_info:
+            return dict([line.split() for line in login_info])
+
     def _change_debt(self, id_number, new_debt):
         row = self._worksheet.find(id_number).row
         col = shop_user.DEBT + 1  # gspread is 1-indexed, shop_users are 0-indexed.
@@ -130,11 +149,10 @@ class _ShopUserDatabaseGoogleWorksheet(object):
 
 class _ShopUserDatabaseLocal(object):
 
-    def __init__(self,
-                 database_file_path=r"D:\Google Drive\Employment\Machine Shop Documents\Automated Check-In\Code\shop-check-in\shop_user_database_local.pkl",
-                 out_of_date_users_file_path=r"D:\Google Drive\Employment\Machine Shop Documents\Automated Check-In\Code\shop-check-in\out_of_sync_users.pkl"):
+    def __init__(self, database_file_path, out_of_date_users_file_path):
         self._database_file_path = database_file_path
         self._out_of_date_users_file_path = out_of_date_users_file_path
+        self._correct_current_working_directory()
 
     def load_shop_user_database(self):
         return self._load_file(self._database_file_path)
@@ -142,11 +160,14 @@ class _ShopUserDatabaseLocal(object):
     def load_out_of_sync_users(self):
         return self._load_file(self._out_of_date_users_file_path)
 
-    def dump_shop_user_database(self, database):
+    def dump_data(self, database, out_of_sync_users):
         self._dump_file(self._database_file_path, database)
-
-    def dump_out_of_sync_users(self, out_of_sync_users):
         self._dump_file(self._out_of_date_users_file_path, out_of_sync_users)
+
+    def _correct_current_working_directory(self):
+        absolute_path = os.path.abspath(__file__)
+        directory_name = os.path.dirname(absolute_path)
+        os.chdir(directory_name)
 
     def _load_file(self, file_path):
         with open(file_path, 'rb') as file_:
@@ -161,11 +182,3 @@ class _ShopUserDatabaseLocal(object):
     def _erase_file(self, file_path):
         with open(file_path, "wb") as file_:
             file_.truncate()
-
-
-class NonexistentUserError(Exception):
-    pass
-
-
-class _CannotAccessGoogleSpreadsheetsError(Exception):
-    pass

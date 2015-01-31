@@ -1,6 +1,8 @@
+from test import sample_users
+
 import shop
-import sample_users
 import shop_check_in_exceptions
+
 
 FIRST_SLOT = 0
 LAST_SLOT = 29

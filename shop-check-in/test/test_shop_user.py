@@ -1,5 +1,6 @@
+from test import sample_users
+
 import shop_user
-import sample_users
 import shop_check_in_exceptions
 
 
