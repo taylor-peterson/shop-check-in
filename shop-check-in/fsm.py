@@ -56,7 +56,7 @@ class BoardFsm(object):
         self._shop_user_database = shop_user_db
         self._event_q = event_q
         self._message_q = message_q
-        self._error_handler = error_handler.ErrorHandler(event_q)
+        self._error_handler = error_handler.ErrorHandler(event_q, self._shop)
 
         self._state_data = {
             CLOSED: ("\nShop closed.\n\rProctor swipe",
@@ -104,6 +104,8 @@ class BoardFsm(object):
         cargo = None
         
         while True:
+            print self._state
+
             state_message = self._state_data[self._state][MESSAGE]
             state_actions = self._state_data[self._state][ACTIONS_DICT]
 
@@ -117,7 +119,7 @@ class BoardFsm(object):
             try:
                 self._state, cargo = state_actions[next_event.key](next_event.data, cargo)
             except KeyError:
-                self._state = self._error_handler.handle_error(self._state, next_event.key)
+                self._state = self._error_handler.handle_error(self._state, next_event.key, next_event.data)
 
     def _go_to_closed_state(self, ignored_event_data, ignored_cargo):
         self._play_noise(NOISE_CLOSING)

@@ -60,6 +60,9 @@ class ShopUser(object):
             raise shop_check_in_exceptions.NonProctorError
         return self.is_shop_certified()
 
+    def get_name_and_email(self):
+        return (self._name, self._email)
+
     def _has_valid_safety_test(self):
         today = datetime.date.today()
         difference_in_years = relativedelta(today, self._test_date).years

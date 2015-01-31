@@ -1,4 +1,5 @@
 import shop_check_in_exceptions
+import shop_user
 
 SLOTS = xrange(30)
 
@@ -43,6 +44,9 @@ class Shop(object):
         occupants = self._occupants[slot]
         self._occupants[slot] = []
         return occupants
+
+    def get_user_s_name_and_email(self, slot):
+        return [user.get_name_and_email() for user in self._occupants[slot]]
 
     def change_pod(self, user):
         if user.is_proctor() and not self.is_pod(user):
