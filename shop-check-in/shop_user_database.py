@@ -13,11 +13,11 @@ SPREADSHEET = "Shop Users"
 SPREADSHEET_TESTING = "Python Testing"
 WORKSHEET = "Raw Data"
 
-PATH_LOCAL_DATABASE = "shop_user_database_local.pkl"
-PATH_OUT_OF_SYNC_USERS = "out_of_sync_users.pkl"
-PATH_TESTING_LOCAL_DATABASE = "test\\shop_user_database_local.pkl"
-PATH_TESTING_OUT_OF_SYNC_USERS = "test\\out_of_sync_users.pkl"
-PATH_LOGIN_INFO = "sensitive_info.txt"
+PATH_LOCAL_DATABASE = "resources\\shop_user_database_local_test.pkl"
+PATH_OUT_OF_SYNC_USERS = "resources\\out_of_sync_users_test.pkl"
+PATH_TESTING_LOCAL_DATABASE = "resources\\shop_user_database_local_test.pkl"
+PATH_TESTING_OUT_OF_SYNC_USERS = "resources\\out_of_sync_users_test.pkl"
+PATH_LOGIN_INFO = "resources\\sensitive_info.txt"
 
 
 class ShopUserDatabase(object):

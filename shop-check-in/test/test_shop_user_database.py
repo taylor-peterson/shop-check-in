@@ -48,13 +48,11 @@ class TestShopUserDatabase(object):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
         try:
-            user = shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
+            shop_user_db.get_shop_user(sample_users.USER_INVALID.id_number)
         except shop_check_in_exceptions.NonexistentUserError:
             assert True
         else:
             assert False
-
-        # assert user == sample_users.USER_INVALID  # TODO: invalid user vs exception?
 
     def test_increase_debt_success(self):
         shop_user_db = shop_user_database.ShopUserDatabaseTesting()
