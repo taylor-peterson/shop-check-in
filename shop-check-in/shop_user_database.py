@@ -10,7 +10,7 @@ import shop_check_in_exceptions
 DEBT_INCREMENT = 3
 
 SPREADSHEET = "Shop Users"
-SPREADSHEET_TESTING = "Python Testing"
+SPREADSHEET_TESTING = "Shop Users Testing"
 WORKSHEET = "Raw Data"
 
 PATH_LOCAL_DATABASE = "resources\\shop_user_database_local_test.pkl"
@@ -152,7 +152,6 @@ class _ShopUserDatabaseLocal(object):
     def __init__(self, database_file_path, out_of_date_users_file_path):
         self._database_file_path = database_file_path
         self._out_of_date_users_file_path = out_of_date_users_file_path
-        self._correct_current_working_directory()
 
     def load_shop_user_database(self):
         return self._load_file(self._database_file_path)
@@ -170,15 +169,18 @@ class _ShopUserDatabaseLocal(object):
         os.chdir(directory_name)
 
     def _load_file(self, file_path):
+        self._correct_current_working_directory()
         with open(file_path, 'rb') as file_:
             return cPickle.load(file_)
 
     def _dump_file(self, file_path, dumpee):
+        self._correct_current_working_directory()
         self._erase_file(file_path)
 
         with open(file_path, 'wb') as file_:
             cPickle.dump(dumpee, file_)
 
     def _erase_file(self, file_path):
+        self._correct_current_working_directory()
         with open(file_path, "wb") as file_:
             file_.truncate()

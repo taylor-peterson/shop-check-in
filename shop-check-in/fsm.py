@@ -104,8 +104,6 @@ class BoardFsm(object):
         cargo = None
         
         while True:
-            print self._state
-
             state_message = self._state_data[self._state][MESSAGE]
             state_actions = self._state_data[self._state][ACTIONS_DICT]
 
