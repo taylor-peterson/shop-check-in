@@ -12,8 +12,9 @@ ERROR_NOT_RESOLVED = "error_not_resolved"
 
 
 class ErrorHandler(object):
-    def __init__(self, event_q, shop):
+    def __init__(self, event_q, message_q, shop):
         self._event_q = event_q
+        self._message_q = message_q
         self._shop = shop
         self._errors = queue.LifoQueue()
 
@@ -36,7 +37,7 @@ class ErrorHandler(object):
             event.BUTTON_CONFIRM: self._handle_confirm_default
         }
 
-        self._error_event_to_action_map = {
+        self._error_specific_event_to_action_map = {
             event.CARD_REMOVE: {
                 event.CARD_INSERT: self._handle_card_reinsert,
                 event.BUTTON_CONFIRM: self._handle_card_removed_not_reinserted
@@ -49,23 +50,20 @@ class ErrorHandler(object):
     def handle_error(self, current_state, error, error_data = None):
         # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
 
-        print self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
-        print "Confirm to return to current state."
-
-
         while True:
+
+            error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
+            print error_msg
+            self._message_q.put(error_msg)
+
             next_event = self._event_q.get()
 
             if next_event.key == event.TERMINATE_PROGRAM:
+                # TODO: Find better way to term. from error, currently need 2 signals
+                self._event_q.put(event.Event(event.TERMINATE_PROGRAM))
                 return current_state
 
-            try:
-                action = self._error_event_to_action_map[error][next_event.key]
-            except KeyError:
-                try:
-                    action = self._default_event_to_action_map[next_event.key]
-                except KeyError:
-                    action = self._handle_unrecognized_event
+            action = self._get_action(error, next_event)
 
             result = action(next_event.data, error_data)
 
@@ -73,6 +71,17 @@ class ErrorHandler(object):
                 return current_state
         
         return current_state
+
+    def _get_action(self, error, next_event):
+        try:
+            action = self._error_specific_event_to_action_map[error][next_event.key]
+        except KeyError:
+            try:
+                action = self._default_event_to_action_map[next_event.key]
+            except KeyError:
+                action = self._handle_unrecognized_event
+
+        return action
 
     def _handle_card_reinsert(self, new_slot, old_slot):
         if new_slot == old_slot:
