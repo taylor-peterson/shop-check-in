@@ -8,7 +8,7 @@ class TestTimeout:
         def infinity():
             while True:
                 pass
-        assert not infinity()
+        assert timeout.is_timeout(infinity())
 
     def test_timeout_func_completes(self):
         @timeout.timeout
@@ -22,7 +22,7 @@ class TestTimeout:
             time.sleep(seconds)
             return True
         assert wait(0.5)
-        assert not wait(1.5)
+        assert timeout.is_timeout(wait(1.5))
 
     def test_make_timeout_return_value(self):
         @timeout.make_timeout(return_value = "done")
