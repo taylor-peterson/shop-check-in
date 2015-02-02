@@ -1,5 +1,5 @@
 import Queue as queue
-from timeout import timeout
+import timeout
 from test_events import *
 import fsm
 import shop
@@ -31,7 +31,7 @@ class ErrorHarness:
         exit_state = self.handle_error(error, error_data)
         assert exit_state == self._start_state
 
-    @timeout
+    @timeout.timeout
     def handle_error(self, error, error_data = None):
         return self._handler.handle_error(self._start_state, error, error_data)
 
@@ -138,4 +138,15 @@ class TestErrorFSMTransition:
 
         assert harness.has_messages()
         assert not harness.no_more_events()
+        print
+
+    def test_timeout_on_unresolved_error(self):
+        print
+        harness = ErrorHarness()
+
+        harness.add_event(BUTTON_CANCEL)
+        harness.add_event(BUTTON_CHANGE_POD)
+        harness.add_event(BUTTON_DISCHARGE_USER)
+
+        assert timeout.is_timeout(harness.handle_error("Default Error"))
         print
