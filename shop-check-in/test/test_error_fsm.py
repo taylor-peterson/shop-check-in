@@ -2,9 +2,6 @@ import Queue as queue
 from test import sample_users
 from test import timeout
 
-timeout = timeout.timeout
-
-import signal
 import shop
 import event
 import error_handler
@@ -61,6 +58,9 @@ class ErrorHarness:
     def has_messages(self):
         return not self._message_q.empty()
 
+    def no_more_events(self):
+        return self._event_q.empty()
+
 
 class TestErrorFSMTransition:
 
@@ -73,11 +73,11 @@ class TestErrorFSMTransition:
                             [BUTTON_CONFIRM])
 
         assert harness.has_messages()
+        assert harness.no_more_events()
         print
 
     def test_non_proctor_error_insert(self):
         print
-
         harness = ErrorHarness()
 
         harness.test_events(shop_check_in_exceptions.NonProctorError,
@@ -85,19 +85,77 @@ class TestErrorFSMTransition:
                             [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM])
 
         assert harness.has_messages()
+        assert harness.no_more_events()
         print
 
-    def test_insert_insert_remove_remove(self):
+    def test_insert_insert_fix_fix(self):
+        print
         harness = ErrorHarness()
 
-        harness.add_event(CARD_INSERT_OTHER)
-        harness.add_event(CARD_REMOVE_OTHER)
-        harness.add_event(CARD_REMOVE)
+        harness.test_events(CARD_INSERT.key,
+                            CARD_INSERT.data,
+                            [CARD_INSERT_OTHER, CARD_REMOVE_OTHER, CARD_REMOVE])
 
-        end_state = harness.handle_error(CARD_INSERT.key, CARD_INSERT.data)
-
-        print
-        assert end_state == STATE_IN
         assert harness.has_messages()
+        assert harness.no_more_events()
         print
 
+    def test_insert_remove_other_fix_fix(self):
+        print
+        harness = ErrorHarness()
+
+        harness.test_events(CARD_INSERT.key,
+                            CARD_INSERT.data,
+                            [CARD_REMOVE_OTHER, CARD_INSERT_OTHER, CARD_REMOVE_OTHER])
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_remove_insert_other_fix_fix(self):
+        print
+        harness = ErrorHarness()
+
+        harness.test_events(CARD_REMOVE.key,
+                            CARD_REMOVE.data,
+                            [CARD_INSERT_OTHER, CARD_REMOVE_OTHER, CARD_INSERT])
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_remove_remove_fix_fix(self):
+        print
+        harness = ErrorHarness()
+
+        harness.test_events(CARD_REMOVE.key,
+                            CARD_REMOVE.data,
+                            [CARD_REMOVE_OTHER, CARD_INSERT_OTHER, CARD_INSERT])
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_no_confirm_closed_nonproctor(self):
+        print
+        harness = ErrorHarness()
+
+        harness.test_events(shop_check_in_exceptions.NonProctorError,
+                            None,
+                            [])
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_default_insert_remove_confirm(self):
+        print
+        harness = ErrorHarness()
+
+        harness.test_events("default error",
+                            None,
+                            [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM, CARD_SWIPE_PROCTOR])
+
+        assert harness.has_messages()
+        assert not harness.no_more_events()
+        print

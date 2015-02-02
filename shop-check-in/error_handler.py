@@ -1,4 +1,5 @@
 import shop
+import fsm
 import shop_user
 import shop_check_in_exceptions
 import event
@@ -31,6 +32,10 @@ class ErrorHandler(object):
             event.CARD_INSERT: "\0ERR - Remove card(s)",
             }
 
+        self._no_confirm_state_error_combos = [
+            (fsm.CLOSED, shop_check_in_exceptions.NonProctorError)
+        ]
+
         self._default_event_to_action_map = {
             event.CARD_INSERT: self._handle_card_insert_default,
             event.CARD_REMOVE: self._handle_card_remove_default,
@@ -54,6 +59,9 @@ class ErrorHandler(object):
 
             error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
             self._message_q.put(error_msg)
+
+            if (current_state, error) in self._no_confirm_state_error_combos:
+                return current_state
 
             next_event = self._event_q.get()
 
