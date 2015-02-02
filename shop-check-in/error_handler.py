@@ -28,7 +28,7 @@ class ErrorHandler(object):
             shop_check_in_exceptions.PodRequiredError: "\0Only Proctor can't sign out",
             shop_user.DEFAULT_NAME: "\0User does not have permissions for that action.",
             event.CARD_SWIPE: "\0ERR - Ignoring swipe. Please confirm.",
-            event.CARD_REMOVE: "\0ERR - Reinsert card(s) or confirm",
+            event.CARD_REMOVE: "\0ERR - Reinsert card(s) or confirm. Slot: ",
             event.CARD_INSERT: "\0ERR - Remove card(s)",
             }
 
@@ -56,15 +56,14 @@ class ErrorHandler(object):
         # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
 
         while True:
-
-            error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
+            error_data_extra = " " + str(error_data) if error_data else ""
+            error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE) + error_data_extra
             self._message_q.put(error_msg)
 
             if (current_state, error) in self._no_confirm_state_error_combos:
                 return current_state
 
             next_event = self._event_q.get()
-
             if next_event.key == event.TERMINATE_PROGRAM:
                 # TODO: Find better way to term. from error, currently need 2 signals
                 self._event_q.put(event.Event(event.TERMINATE_PROGRAM))
@@ -115,7 +114,7 @@ class ErrorHandler(object):
         return ERROR_NOT_RESOLVED
 
     def _handle_card_remove_default(self, new_slot, unused_error_data = None):
-        self.handle_error(None, event.CARD_INSERT, new_slot)
+        self.handle_error(None, event.CARD_REMOVE, new_slot)
         return ERROR_NOT_RESOLVED
 
     def _handle_confirm_default(self, unused_data = None, unused_error_data = None):
