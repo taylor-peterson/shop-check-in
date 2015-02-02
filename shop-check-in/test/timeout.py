@@ -1,15 +1,22 @@
 from functools import wraps
 from threading import Thread
-import signal
+"""
+Provides two features:
+    - A timeout decorator that forces functions to return false after 1 second
+    - A make_timeout decorator making method that lets you specify a time (seconds)
+      and a return_value to be returned after that time.
+"""
+
+DEFAULT_TIME = 1
 
 class TimeoutError(Exception):
     pass
 
-def make_timeout(seconds):
+def make_timeout(seconds = DEFAULT_TIME, return_value = False):
     def deco(func):
-        @wraps(func)
         def wrapper(*args, **kwargs):
-            res = [Exception('function [%s] timeout [%s seconds] exceeded!' % (func.__name__, seconds))]
+            TIMED_OUT = "timedout"
+            res = [TIMED_OUT]
             def newFunc():
                 try:
                     res[0] = func(*args, **kwargs)
@@ -17,17 +24,13 @@ def make_timeout(seconds):
                     res[0] = e
             t = Thread(target=newFunc)
             t.daemon = True
-            try:
-                t.start()
-                t.join(seconds)
-            except Exception, je:
-                print 'error starting thread'
-                raise je
+            t.start()
+            t.join(seconds)
             ret = res[0]
-            if isinstance(ret, BaseException):
-                return ret
+            if ret == TIMED_OUT:
+                return return_value
             return ret
-        return wrapper
+        return wraps(func)(wrapper)
     return deco
 
-timeout = make_timeout(1)
+timeout = make_timeout()

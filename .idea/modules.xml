@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Shop Check In.iml" filepath="$PROJECT_DIR$/.idea/Shop Check In.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/shop-check-in.iml" filepath="$PROJECT_DIR$/.idea/shop-check-in.iml" />
     </modules>
   </component>

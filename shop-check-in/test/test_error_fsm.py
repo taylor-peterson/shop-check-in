@@ -61,18 +61,6 @@ class ErrorHarness:
         return not self._message_q.empty()
 
 
-class TestTimeout:
-
-    def test_timeout(self):
-        @timeout
-        def infinity():
-            while True:
-                pass
-        res = infinity()
-        print "result of timeout:", res
-        assert not res
-
-
 class TestErrorFSMTransition:
 
     def test_non_proctor_error_confirm(self):
