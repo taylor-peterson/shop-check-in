@@ -3,16 +3,16 @@ import timeout
 from test_events import *
 import fsm
 import shop
+import sample_users
 import error_handler
 import shop_user_database
 import shop_check_in_exceptions
 
-
-
 STATE_IN = "state-in"
 
+
 class ErrorHandlerHarness:
-    def __init__(self, state = STATE_IN):
+    def __init__(self, state=STATE_IN):
         self._event_q = queue.Queue()
         self._message_q = queue.Queue()
         self._shop = shop.Shop()
@@ -22,8 +22,8 @@ class ErrorHandlerHarness:
     def set_initial_state(self, state):
         self._start_state = state
 
-    def add_event(self, event):
-        self._event_q.put(event)
+    def add_event(self, an_event):
+        self._event_q.put(an_event)
 
     def test_events(self, error, error_data, events):
         """
@@ -35,8 +35,8 @@ class ErrorHandlerHarness:
         exit_state = self.handle_error(error, error_data)
         assert exit_state == self._start_state
 
-    @timeout.timeout
-    def handle_error(self, error, error_data = None):
+    @timeout.make_timeout(5)
+    def handle_error(self, error, error_data=None):
         return self._handler.handle_error(self._start_state, error, error_data)
 
     def has_messages(self):
@@ -47,7 +47,6 @@ class ErrorHandlerHarness:
 
 
 class TestErrorHandlerTransitions:
-
     def test_non_proctor_error_confirm(self):
         print
         harness = ErrorHandlerHarness()
@@ -127,7 +126,7 @@ class TestErrorHandlerTransitions:
 
         harness.test_events(shop_check_in_exceptions.NonProctorError(),
                             None,
-                            [])
+            [])
 
         assert harness.has_messages()
         assert harness.no_more_events()
@@ -167,7 +166,7 @@ class ErrorAndFSMHarness:
     def test_events_expect_state(self, events, state):
         assert state == self.test_events(events)
 
-    def test_events_expect_timeout(self, events, state):
+    def test_events_expect_timeout(self, events):
         assert timeout.is_timeout(self.test_events(events))
 
     def test_events(self, events):
@@ -189,8 +188,8 @@ class ErrorAndFSMHarness:
     def no_more_events(self):
         return self._event_q.empty()
 
-class TestErrorFSMIntegration:
 
+class TestErrorFSMIntegration:
     def test_nonproctor_open_then_open(self):
         print
         harness = ErrorAndFSMHarness()
@@ -202,7 +201,7 @@ class TestErrorFSMIntegration:
              CARD_INSERT,
              CARD_REMOVE,
              CARD_SWIPE_PROCTOR,
-             SWITCH_FLIP_OFF,
+             SWITCH_FLIP_ON,
              TERMINATE_PROGRAM],
             fsm.STANDBY
         )
@@ -216,7 +215,7 @@ class TestErrorFSMIntegration:
 
         harness.test_events_expect_state(
             [CARD_SWIPE_PROCTOR,
-             SWITCH_FLIP_OFF,
+             SWITCH_FLIP_ON,
              CARD_SWIPE_PROCTOR,
              CARD_SWIPE_CERTIFIED,
              CARD_INSERT,
@@ -235,7 +234,7 @@ class TestErrorFSMIntegration:
 
         harness.test_events_expect_state(
             [CARD_SWIPE_PROCTOR,
-             SWITCH_FLIP_OFF,
+             SWITCH_FLIP_ON,
              CARD_SWIPE_PROCTOR,
              CARD_SWIPE_INVALID,
              BUTTON_CONFIRM,
@@ -251,4 +250,11 @@ class TestErrorFSMIntegration:
 
         assert harness.has_messages()
         assert harness.no_more_events()
+        print
+
+    def test_email(self):
+
+        print
+        harness = ErrorHandlerHarness()
+        harness._handler._mailer._send_id_card_email_s([sample_users.USER_CERTIFIED])
         print

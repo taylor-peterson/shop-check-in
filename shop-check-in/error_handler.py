@@ -3,8 +3,7 @@ import fsm
 import shop_user
 import shop_check_in_exceptions
 import event
-import Queue as queue
-
+from mailer import Mailer
 import winsound
 
 DEFAULT_ERROR_MESSAGE = "\0Action not recognized."
@@ -16,7 +15,8 @@ class ErrorHandler(object):
     def __init__(self, event_q, message_q, shop_):
         self._event_q = event_q
         self._message_q = message_q
-        self._shop = shop
+        self._shop = shop_
+        self._mailer = Mailer()
 
         # TODO: Right now errors are sometimes passed in as events, sometimes errors. Homogenize.
         self._messages_to_display = {
@@ -62,7 +62,8 @@ class ErrorHandler(object):
                 return True
         return False
 
-    def _same_error(self, e, template_e):
+    @staticmethod
+    def _same_error(e, template_e):
         """
         Determines if e is an instance of error class template_e OR if e equals template_e
         """
@@ -72,7 +73,7 @@ class ErrorHandler(object):
         except TypeError:
             return e == template_e
 
-    def handle_error(self, return_state, error, error_data = None):
+    def handle_error(self, return_state, error, error_data=None):
         # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
 
         self._store_error_frame(return_state, error, error_data)
@@ -132,22 +133,24 @@ class ErrorHandler(object):
             self.handle_error(None, event.CARD_REMOVE, new_slot)
             return ERROR_NOT_RESOLVED
 
-    def _handle_card_removed_not_reinserted(self, unused_data = None, old_slot = None):
+    def _handle_card_removed_not_reinserted(self, unused_data=None, old_slot=None):
         assert old_slot is not None
-        print "User %s, left the shop!" % (str(self._shop.get_user_s_name_and_email(old_slot)))
-        # TODO: Send angry email
+        self._message_q.put("User %s, left the shop!" %
+                            (str(self._shop.get_user_s_name_and_email(old_slot))))
+        users = self._shop.get_user_s(old_slot)
+        self._mailer._send_id_card_email_s(users)
         self._shop.discharge_user_s(old_slot)
 
-    def _handle_card_insert_default(self, new_slot, unused_error_data = None):
+    def _handle_card_insert_default(self, new_slot, unused_error_data=None):
         self.handle_error(None, event.CARD_INSERT, new_slot)
         return ERROR_NOT_RESOLVED
 
-    def _handle_card_remove_default(self, new_slot, unused_error_data = None):
+    def _handle_card_remove_default(self, new_slot, unused_error_data=None):
         self.handle_error(None, event.CARD_REMOVE, new_slot)
         return ERROR_NOT_RESOLVED
 
-    def _handle_confirm_default(self, unused_data = None, unused_error_data = None):
+    def _handle_confirm_default(self, unused_data=None, unused_error_data=None):
         return ERROR_RESOLVED
 
-    def _handle_unrecognized_event(self, unused_data = None, unused_error_data = None):
+    def _handle_unrecognized_event(self, unused_data=None, unused_error_data=None):
         return ERROR_NOT_RESOLVED

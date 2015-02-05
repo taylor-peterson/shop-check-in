@@ -47,6 +47,9 @@ class Shop(object):
         self._occupants[slot] = []
         return occupants
 
+    def get_user_s(self, slot):
+        return self._occupants[slot]
+
     def get_user_s_name_and_email(self, slot):
         return [user.get_name_and_email() for user in self._occupants[slot]]
 
