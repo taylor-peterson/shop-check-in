@@ -27,10 +27,10 @@ CHANGING_POD = "changing pod"
 
 NOISE_OPENING = "resources\\sounds\\thx.wav"
 NOISE_CLOSING = "resources\\sounds\\shutdown.wav"
-NOISE_SUCCESS = "\\resources\\sounds\\success_ding.wav"
-NOISE_ERROR = "\\resources\\sounds\\error_buzz.wav"
-NOISE_CLEARING_DEBT = "\\resources\\sounds\\cha_ching.wav"
-NOISE_CHARGING_USER = "\\resources\\sounds\\sad_trombone.wav"
+NOISE_SUCCESS = "resources\\sounds\\success_ding.wav"
+NOISE_ERROR = "resources\\sounds\\error_buzz.wav"
+NOISE_CLEARING_DEBT = "resources\\sounds\\cha_ching.wav"
+NOISE_CHARGING_USER = "resources\\sounds\\sad_trombone.wav"
 
 # TODO: any clean way to avoid unused function parameters?
 
@@ -252,19 +252,18 @@ def main():
     event_q = queue.Queue()
     message_q = queue.Queue()
 
-    shop_user_db = shop_user_database.ShopUserDatabase()
-    board = BoardFsm(event_q, message_q, shop_user_db)
+    shop_user_db = shop_user_database.ShopUserDatabaseTesting()
 
     thread_id_logger = id_logger.IdLogger(event_q)
     thread_id_logger.daemon = True
-    thread_io_moderator = io_moderator.IoModerator(event_q, message_q)
-
     thread_id_logger.start()
-    thread_id_logger.daemon = True
+
+    thread_io_moderator = io_moderator.IoModerator(event_q, message_q)
+    thread_io_moderator.daemon = True
     thread_io_moderator.start()
 
-    while True:
-        board.run_fsm()
+    board = BoardFsm(event_q, message_q, shop_user_db)
+    board.run_fsm()
 
 if __name__ == "__main__":
     main()

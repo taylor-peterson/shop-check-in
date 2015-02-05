@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 from dateutil.relativedelta import relativedelta
 import dateutil.parser
@@ -78,8 +79,9 @@ class ShopUser(object):
             validated_user_data[TEST_DATE] = dateutil.parser.parse(user_data[TEST_DATE])
             validated_user_data[DEBT] = int(float(user_data[DEBT]))
             validated_user_data[PROCTOR] = user_data[PROCTOR] == IS_PROCTOR
-        except ValueError:
-            raise shop_check_in_exceptions.InvalidUserError  # TODO: where to catch this error?
+        except ValueError, e:
+            exc_traceback = sys.exc_traceback
+            raise shop_check_in_exceptions.InvalidUserError, None, exc_traceback # TODO: where to catch this error?
         else:
             return validated_user_data
 

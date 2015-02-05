@@ -5,7 +5,7 @@ import serial
 
 import event
 
-COM_PORT = 'COM8'
+COM_PORT = 'COM5'
 BAUD_RATE = 115200
 TIMEOUT_SECONDS = 0.05
 
