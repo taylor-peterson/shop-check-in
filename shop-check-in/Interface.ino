@@ -13,18 +13,18 @@ Read in switch states and write out to serial
 #include <LiquidCrystal.h>
 
 // Pinout
-#define SIG0  0 // Signal Input Pins
-#define SIG1  1 
-#define SEL0  5 // Signal Select Pins
-#define SEL1  4
-#define SEL2  3
-#define SEL3  2
-#define PWR   7 // Power Switch Pin
-#define in0   8 // Button Pins
-#define in1   9
-#define in2  10
-#define in3  11
-#define in4  12 
+#define SIG0 15 // Signal Input Pins
+#define SIG1 18 
+#define SEL0 22 // Signal Select Pins
+#define SEL1 21
+#define SEL2 20
+#define SEL3 19
+#define PWR  14 // Power Switch Pin
+#define in0   0 // Button Pins
+#define in1   1
+#define in2   2
+#define in3   3
+#define in4   4 
 
 // Constants
 const int STRLEN = 16;      // Character-width of LCD row
@@ -45,7 +45,7 @@ unsigned long currentTime;
 unsigned long difference;
 
 // initialize the library with the numbers of the interface pins
-LiquidCrystal lcd(18, 19, 20, 21, 22, 23);
+LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
 
 
 
