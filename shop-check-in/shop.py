@@ -14,8 +14,10 @@ class Shop(object):
         if user.is_proctor() and not self._open:
             self._open = True
             self._pods.append(user)
-        else:
+        elif user.is_proctor():
             raise shop_check_in_exceptions.ShopAlreadyOpenError
+        else:
+            raise shop_check_in_exceptions.NonProctorError
 
     def close_(self, user):
         if self.is_pod(user) and self._empty():

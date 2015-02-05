@@ -52,7 +52,7 @@ class TestErrorHandlerTransitions:
         print
         harness = ErrorHandlerHarness()
 
-        harness.test_events(shop_check_in_exceptions.NonProctorError,
+        harness.test_events(shop_check_in_exceptions.NonProctorError(),
                             None,
                             [BUTTON_CONFIRM])
 
@@ -64,7 +64,7 @@ class TestErrorHandlerTransitions:
         print
         harness = ErrorHandlerHarness()
 
-        harness.test_events(shop_check_in_exceptions.NonProctorError,
+        harness.test_events(shop_check_in_exceptions.NonProctorError(),
                             None,
                             [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM])
 
@@ -125,7 +125,7 @@ class TestErrorHandlerTransitions:
         harness = ErrorHandlerHarness()
         harness.set_initial_state(fsm.CLOSED)
 
-        harness.test_events(shop_check_in_exceptions.NonProctorError,
+        harness.test_events(shop_check_in_exceptions.NonProctorError(),
                             None,
                             [])
 
@@ -191,5 +191,64 @@ class ErrorAndFSMHarness:
 
 class TestErrorFSMIntegration:
 
-    def test_1(self):
-        pass
+    def test_nonproctor_open_then_open(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_CERTIFIED,
+             CARD_SWIPE_INVALID,
+
+             CARD_INSERT,
+             CARD_REMOVE,
+             CARD_SWIPE_PROCTOR,
+             SWITCH_FLIP_OFF,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_terminate_from_error_state(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_PROCTOR,
+             SWITCH_FLIP_OFF,
+             CARD_SWIPE_PROCTOR,
+             CARD_SWIPE_CERTIFIED,
+             CARD_INSERT,
+             CARD_REMOVE,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_in_and_out_errors(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_PROCTOR,
+             SWITCH_FLIP_OFF,
+             CARD_SWIPE_PROCTOR,
+             CARD_SWIPE_INVALID,
+             BUTTON_CONFIRM,
+             CARD_SWIPE_CERTIFIED,
+             CARD_SWIPE_PROCTOR,
+             BUTTON_CANCEL,
+             CARD_INSERT,
+             BUTTON_CONFIRM,
+             CARD_REMOVE,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print

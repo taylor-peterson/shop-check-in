@@ -141,7 +141,10 @@ class BoardFsm(object):
     def _closed_process_card_swipe(self, user, ignored_cargo):
         try:
             user.is_proctor()
-        except shop_check_in_exceptions.ShopUserError as error:
+        except shop_check_in_exceptions.MoneyOwedError as error:
+            self._play_noise(NOISE_ERROR)
+            return self._error_handler.handle_error(self._state, error, user.debt), ignored_cargo
+        except shop_check_in_exceptions.ShopUserError as  error:
             self._play_noise(NOISE_ERROR)
             return self._error_handler.handle_error(self._state, error), ignored_cargo
         else:
@@ -160,7 +163,8 @@ class BoardFsm(object):
             return UNLOCKED, user
         else:
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
+            error = shop_check_in_exceptions.UnauthorizedUserError()
+            return self._error_handler.handle_error(self._state, error), ignored_cargo
 
     @_process_card_swipe
     def _unlocked_process_card_swipe(self, user, ignored_cargo):
