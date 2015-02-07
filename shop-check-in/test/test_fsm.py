@@ -109,7 +109,7 @@ class TestFsmStateTransitions:
         event_q.put(BUTTON_CONFIRM)
         event_q.put(CARD_REMOVE)
         event_q.put(BUTTON_CONFIRM)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(BUTTON_CONFIRM)
         event_q.put(SWITCH_FLIP_ON)
         event_q.put(BUTTON_CONFIRM)
