@@ -13,8 +13,8 @@ CARD_SWIPE_INVALID = event.Event(event.CARD_SWIPE, sample_users.USER_INVALID.id_
 CARD_INSERT = event.Event(event.CARD_INSERT, 5)
 CARD_REMOVE = event.Event(event.CARD_REMOVE, 5)
 
-SWITCH_FLIP_ON = event.Event(event.SWITCH_FLIP_ON, "")
 SWITCH_FLIP_OFF = event.Event(event.SWITCH_FLIP_OFF, "")
+SWITCH_FLIP_ON = event.Event(event.SWITCH_FLIP_ON, "")
 
 BUTTON_CANCEL = event.Event(event.BUTTON_CANCEL, "")
 BUTTON_CONFIRM = event.Event(event.BUTTON_CONFIRM)
@@ -109,9 +109,9 @@ class TestFsmStateTransitions:
         event_q.put(BUTTON_CONFIRM)
         event_q.put(CARD_REMOVE)
         event_q.put(BUTTON_CONFIRM)
-        event_q.put(SWITCH_FLIP_ON)
-        event_q.put(BUTTON_CONFIRM)
         event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(BUTTON_CONFIRM)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(BUTTON_CONFIRM)
         event_q.put(BUTTON_CANCEL)
         event_q.put(BUTTON_CONFIRM)
@@ -152,7 +152,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(TERMINATE_PROGRAM)
 
         print "\n"
@@ -167,7 +167,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_CERTIFIED)
         event_q.put(BUTTON_CONFIRM)
         event_q.put(CARD_SWIPE_PROCTOR)
@@ -186,7 +186,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(TERMINATE_PROGRAM)
 
@@ -202,7 +202,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CANCEL)
         event_q.put(TERMINATE_PROGRAM)
@@ -219,7 +219,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_CERTIFIED)
         event_q.put(TERMINATE_PROGRAM)
@@ -236,7 +236,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(TERMINATE_PROGRAM)
@@ -253,7 +253,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_INVALID)
         event_q.put(BUTTON_CONFIRM)
@@ -271,7 +271,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_REMOVE)
         event_q.put(TERMINATE_PROGRAM)
@@ -288,7 +288,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_MONEY)
         event_q.put(TERMINATE_PROGRAM)
@@ -305,7 +305,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CHANGE_POD)
         event_q.put(TERMINATE_PROGRAM)
@@ -322,9 +322,9 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
-        event_q.put(CARD_SWIPE_POD)
         event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_OFF)
         event_q.put(TERMINATE_PROGRAM)
 
         print "\n"
@@ -339,7 +339,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CANCEL)
@@ -357,7 +357,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_INSERT)
@@ -375,7 +375,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_CERTIFIED)
@@ -393,7 +393,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_CERTIFIED)
@@ -412,7 +412,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_CERTIFIED)
@@ -431,7 +431,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_REMOVE)
         event_q.put(CARD_INSERT)
@@ -449,7 +449,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_REMOVE)
         event_q.put(BUTTON_DISCHARGE_USER)
@@ -467,7 +467,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_REMOVE)
         event_q.put(BUTTON_MONEY)
@@ -485,7 +485,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_MONEY)
         event_q.put(BUTTON_CANCEL)
@@ -503,7 +503,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_MONEY)
         event_q.put(CARD_SWIPE_CERTIFIED)
@@ -521,7 +521,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_MONEY)
         event_q.put(CARD_SWIPE_INVALID)
@@ -540,7 +540,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CHANGE_POD)
         event_q.put(BUTTON_CANCEL)
@@ -558,7 +558,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CHANGE_POD)
         event_q.put(CARD_SWIPE_PROCTOR)
@@ -576,7 +576,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CHANGE_POD)
         event_q.put(CARD_SWIPE_POD)
@@ -596,7 +596,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CHANGE_POD)
         event_q.put(CARD_SWIPE_PROCTOR)
@@ -617,7 +617,7 @@ class TestFsmStateTransitions:
         board = fsm.BoardFsm(event_q, message_q, shop_user_db)
         
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(SWITCH_FLIP_OFF)
+        event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(BUTTON_CHANGE_POD)
         event_q.put(CARD_SWIPE_CERTIFIED)

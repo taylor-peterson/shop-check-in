@@ -6,29 +6,29 @@ import Queue as queue
 
 import winsound
 
-DEFAULT_ERROR_MESSAGE = "Action not recognized."
-ERROR_RESOLVED = "eror_resolved"
+DEFAULT_ERROR_MESSAGE = "\0Action not recognized."
+ERROR_RESOLVED = "error_resolved"
 ERROR_NOT_RESOLVED = "error_not_resolved"
 
 
 class ErrorHandler(object):
-    def __init__(self, event_q, message_q, shop):
+    def __init__(self, event_q, message_q, shop_):
         self._event_q = event_q
         self._message_q = message_q
-        self._shop = shop
+        self._shop = shop_
         self._errors = queue.LifoQueue()
 
         self._messages_to_display = {
-            shop_check_in_exceptions.MoneyOwedError: "The user owes the shop money.",
-            shop_check_in_exceptions.NonProctorError: "That user is not a proctor.",
-            shop_check_in_exceptions.ShopOccupiedError: "The shop is currently occupied.",
-            shop_check_in_exceptions.OutOfDateTestError: "That user has an out-of-date safety test.",
-            shop_check_in_exceptions.ShopAlreadyOpenError: "The shop is already open.",
-            shop_check_in_exceptions.PodRequiredError: "You are the only Proctor, you can't sign out",
-            shop_user.DEFAULT_NAME: "User does not have permissions for that action.",
-            event.CARD_SWIPE: "ERR - Ignoring swipe. Please confirm.",
-            event.CARD_REMOVE: "ERR - Reinsert card(s), or confirm students have left.",
-            event.CARD_INSERT: "ERR - Remove card(s) that were just inserted",
+            shop_check_in_exceptions.MoneyOwedError: "\0User owes money.",
+            shop_check_in_exceptions.NonProctorError: "\0User is not a proctor.",
+            shop_check_in_exceptions.ShopOccupiedError: "\0Shop is currently occupied.",
+            shop_check_in_exceptions.OutOfDateTestError: "\0Out-of-date safety test.",
+            shop_check_in_exceptions.ShopAlreadyOpenError: "\0Shop is already open.",
+            shop_check_in_exceptions.PodRequiredError: "\0Only Proctor can't sign out",
+            shop_user.DEFAULT_NAME: "\0User does not have permissions for that action.",
+            event.CARD_SWIPE: "\0ERR - Ignoring swipe. Please confirm.",
+            event.CARD_REMOVE: "\0ERR - Reinsert card(s) or confirm",
+            event.CARD_INSERT: "\0ERR - Remove card(s)",
             }
 
         self._default_event_to_action_map = {
@@ -47,13 +47,12 @@ class ErrorHandler(object):
             }
         }
 
-    def handle_error(self, current_state, error, error_data = None):
+    def handle_error(self, current_state, error, error_data=None):
         # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
 
         while True:
 
             error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
-            print error_msg
             self._message_q.put(error_msg)
 
             next_event = self._event_q.get()
@@ -98,11 +97,10 @@ class ErrorHandler(object):
             return ERROR_NOT_RESOLVED
 
     def _handle_card_removed_not_reinserted(self, unused_data = None, old_slot = None):
-        assert old_slot != None
+        assert old_slot is not None
         print "User %s, left the shop!" % (str(self._shop.get_user_s_name_and_email(old_slot)))
         # TODO: Send angry email
         self._shop.discharge_user_s(old_slot)
-
 
     def _handle_card_insert_default(self, new_slot, unused_error_data = None):
         self.handle_error(None, event.CARD_INSERT, new_slot)

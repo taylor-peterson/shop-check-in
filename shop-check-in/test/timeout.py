@@ -10,16 +10,19 @@ Provides two features:
 
 DEFAULT_TIME = 1
 
+
 class TimeoutError(Exception):
     pass
+
 
 def is_timeout(result):
     return isinstance(result, TimeoutError)
 
-def make_timeout(seconds = DEFAULT_TIME, return_value = TimeoutError()):
+
+def make_timeout(seconds=DEFAULT_TIME, return_value = TimeoutError()):
     def deco(func):
         def wrapper(*args, **kwargs):
-            TIMED_OUT = "timedout"
+            TIMED_OUT ="timedout"
             res = [TIMED_OUT]
             def newFunc():
                 try:

@@ -34,6 +34,7 @@ TERMINATE_PROGRAM = event.Event(event.TERMINATE_PROGRAM)
 
 STATE_IN = "state-in"
 
+
 class ErrorHarness:
     def __init__(self):
         self._event_q = queue.Queue()

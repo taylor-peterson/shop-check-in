@@ -11,6 +11,7 @@ BUTTON_MONEY = "B2"
 BUTTON_CHANGE_POD = "B3"
 BUTTON_DISCHARGE_USER = "B4"
 
+
 TERMINATE_PROGRAM = "halt"
 
 
@@ -20,3 +21,6 @@ class Event():
                  data=[]):
         self.key = key
         self.data = data
+
+    def __repr__(self):
+        return "Key is: %s; data is %s." % (self.key, self.data)

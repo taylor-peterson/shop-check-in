@@ -59,43 +59,43 @@ class BoardFsm(object):
         self._error_handler = error_handler.ErrorHandler(event_q, message_q,  self._shop)
 
         self._state_data = {
-            CLOSED: ("\nShop closed.\n\rProctor swipe",
+            CLOSED: ("\0Shop closed.\n\rProctor swipe",
                      {event.CARD_SWIPE: self._closed_process_card_swipe}),
 
-            OPENING: ("\nStarting up!\n\rFlip switch",
+            OPENING: ("\0Starting up!\n\rFlip switch",
                       {event.BUTTON_CANCEL: self._go_to_closed_state,
-                       event.SWITCH_FLIP_OFF: self._opening_process_switch_flip}),
+                       event.SWITCH_FLIP_ON: self._opening_process_switch_flip}),
 
-            STANDBY: ("\nBoard locked.\n\rPOD swipe",
+            STANDBY: ("\0Board locked.\n\rPOD swipe",
                       {event.CARD_SWIPE: self._standby_process_card_swipe}),
 
-            UNLOCKED: ("\nBoard Unlocked.\n\rTake any action",
+            UNLOCKED: ("\0Board Unlocked.\n\rTake any action",
                        {event.BUTTON_CANCEL: self._go_to_standby_state,
                         event.CARD_SWIPE: self._unlocked_process_card_swipe,
                         event.CARD_REMOVE: self._go_to_remove_user_state,
                         event.BUTTON_MONEY: self._go_to_clear_money_state,
                         event.BUTTON_CHANGE_POD: self._go_to_change_pod_state,
-                        event.SWITCH_FLIP_ON: self._unlocked_process_closing_shop}),
+                        event.SWITCH_FLIP_OFF: self._unlocked_process_closing_shop}),
 
-            ADDING_USER: ("\nAdding user.\n\rSwipe/insert card",
+            ADDING_USER: ("\0Adding user.\n\rSwipe/insert card",
                           {event.CARD_SWIPE: self._adding_user_process_card_swipe,
                            event.CARD_INSERT: self._adding_user_s_process_slot,
                            event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            ADDING_USERS: ("\nAdding users.\n\rInsert cards",
+            ADDING_USERS: ("\0Adding users.\n\rInsert cards",
                            {event.CARD_INSERT: self._adding_user_s_process_slot,
                             event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            REMOVING_USER: ("\nRemoving user(s).\n\r(R)nsrt/clr/chrg",
+            REMOVING_USER: ("\0Removing user(s).\n\r(R)nsrt/clr/chrg",
                             {event.CARD_INSERT: self._removing_user_process_slot,
                              event.BUTTON_DISCHARGE_USER: self._removing_user_process_discharge,
                              event.BUTTON_MONEY: self._removing_user_process_charge}),
 
-            CLEARING_DEBT: ("\nClearing debt.\n\rSwipe card",
+            CLEARING_DEBT: ("\0Clearing debt.\n\rSwipe card",
                             {event.CARD_SWIPE: self._clearing_debt_process_card_swipe,
                              event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            CHANGING_POD: ("\nChanging POD.\n\rSwipe card",
+            CHANGING_POD: ("\0Changing POD.\n\rSwipe card",
                            {event.CARD_SWIPE: self._changing_pod_process_card_swipe,
                             event.BUTTON_CANCEL: self._go_to_standby_state})
             }
@@ -104,14 +104,13 @@ class BoardFsm(object):
         cargo = None
         
         while True:
-            print self._state
-
             state_message = self._state_data[self._state][MESSAGE]
             state_actions = self._state_data[self._state][ACTIONS_DICT]
 
             self._message_q.put(state_message)
             
             next_event = self._event_q.get()
+            print next_event.key
 
             if next_event.key == event.TERMINATE_PROGRAM:
                 return self._state

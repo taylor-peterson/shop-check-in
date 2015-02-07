@@ -41,6 +41,17 @@ class IoModerator(threading.Thread):
             self._event_q.put(new_event)
 
     def _convert_message_to_event(self, message):
-        event_key = message[EVENT_KEY_START_INDEX, EVENT_KEY_END_INDEX]
+        event_key = message[EVENT_KEY_START_INDEX:EVENT_KEY_END_INDEX]
         event_data = message[EVENT_DATA_START_INDEX:]  # Empty list if index is out of bounds.
         return event.Event(event_key, event_data)
+
+
+def main():
+    event_q = Queue.Queue()
+    message_q = Queue.Queue()
+    message_q.put("\0TESTING")
+    IoModerator(event_q, message_q).run()
+
+
+if __name__ == "__main__":
+    main()
