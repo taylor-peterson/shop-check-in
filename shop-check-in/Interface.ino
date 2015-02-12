@@ -13,6 +13,7 @@ Read in switch states and write out to serial
 #include <LiquidCrystal.h>
 
 // Pinout
+#define LED  13 // LED pin
 #define SIG0 15 // Signal Input Pins
 #define SIG1 18 
 #define SEL0 22 // Signal Select Pins
@@ -30,6 +31,8 @@ Read in switch states and write out to serial
 const int STRLEN = 16;      // Character-width of LCD row
 const int INITDELAY = 1000; // Multiplexer post-reset delay
 const int SHIFTTIME = 62;   // Time between multiplexer shifts
+const int LEDTIMER = 1000;  // One half period of led blink
+const int DEBOUNCE = 30;    // Debounce delay in milliseconds
 
 // Initializing Variables
 int lcdCursor;
@@ -39,10 +42,12 @@ int switchRead;
 int switchState;
 int matrixState[32];
 int selectPins;
+int blinkTimer;
 boolean mux0, mux1;
 unsigned long nextShift;
 unsigned long currentTime;
 unsigned long difference;
+unsigned long debounceTimer;
 
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(12, 11, 10, 9, 8, 7);
@@ -52,6 +57,7 @@ LiquidCrystal lcd(12, 11, 10, 9, 8, 7);
 void setup() {
   Serial.begin(115200);
 
+  initLED();
   initSwitch();
   initButtons();
   initMuxer();  
@@ -63,6 +69,7 @@ void setup() {
 }
 
 void loop() {
+  blinkLED();
   readSwitch();
   readButtons();
   readMuxer();
@@ -72,16 +79,29 @@ void loop() {
 
 
 
+void initLED(){
+  pinMode(LED, OUTPUT);
+}
+
+void blinkLED(){
+  if ((millis()%(2*LEDTIMER)) > LEDTIMER){
+    digitalWrite(LED,HIGH);
+  } else {
+    digitalWrite(LED, LOW);
+  }
+}
+
 void initSwitch(){
   pinMode(PWR, INPUT_PULLUP);
 }
 
 void readSwitch(){
   switchRead = digitalRead(PWR);
-  if (switchState != switchRead){
+  if (switchState != switchRead && millis() - debounceTimer > DEBOUNCE){
     Serial.print("S");
     Serial.println(switchRead);
     switchState = switchRead;
+    debounceTimer = millis();
   }
 }
   
@@ -105,10 +125,14 @@ void readButtons(){
   buttonRead[4] = !digitalRead(in4);  
   
   for(int i=0; i<5; i++){
-    if (buttonRead[i] != buttonState[i]){
+    if (buttonRead[i] > buttonState[i] && millis() - debounceTimer > DEBOUNCE){
       Serial.print("B");
       Serial.println(i);
       buttonState[i] = buttonRead[i];
+      debounceTimer = millis();
+    } else if (buttonRead[i] < buttonState[i] && millis() - debounceTimer > DEBOUNCE){
+      buttonState[i] = buttonRead[i];
+      debounceTimer = millis();
     }
   }
 }
@@ -143,15 +167,17 @@ void readMuxer(){
     mux0 = digitalRead(SIG0);
     mux1 = digitalRead(SIG1);
     
-    if (mux0 != matrixState[selectPins]){
+    if (mux0 != matrixState[selectPins] && millis() - debounceTimer > DEBOUNCE){
       Serial.print("M");
       Serial.print(mux0);
       Serial.print(selectPins);
+      debounceTimer = millis();
     }      
-    if (mux1 != matrixState[selectPins + 16]){
+    if (mux1 != matrixState[selectPins + 16] && millis() - debounceTimer > DEBOUNCE){
       Serial.print("M");
       Serial.print(mux1);
       Serial.print(selectPins + 16);
+      debounceTimer = millis();
     }         
       
     matrixState[selectPins]      = mux0;
