@@ -58,7 +58,6 @@ class ErrorHandler(object):
     def _requires_no_confirmation(self, state, error):
         for (no_confirm_state, no_confirm_error) in self._no_confirm_state_error_combos:
             if state == no_confirm_state and self._same_error(error, no_confirm_error):
-                print "The error %s from state %s requires no confirmation" % (str(error), str(state))
                 return True
         return False
 
@@ -67,7 +66,6 @@ class ErrorHandler(object):
         """
         Determines if e is an instance of error class template_e OR if e equals template_e
         """
-        print "Same error:", str(e), str(template_e)
         try:
             return isinstance(e, template_e)
         except TypeError:
