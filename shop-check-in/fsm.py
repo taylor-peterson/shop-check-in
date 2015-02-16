@@ -11,6 +11,7 @@ import shop_user
 import shop_user_database
 import io_moderator
 import shop_check_in_exceptions
+import logger.all_events as event_logger
 
 MESSAGE = 0
 ACTIONS_DICT = 1
@@ -107,9 +108,9 @@ class BoardFsm(object):
             state_message = self._state_data[self._state][MESSAGE]
             state_actions = self._state_data[self._state][ACTIONS_DICT]
 
-            self._message_q.put(state_message)
+            self._send_message(state_message)
             
-            next_event = self._event_q.get()
+            next_event = self._get_event()
             print next_event.key
 
             if next_event.key == event.TERMINATE_PROGRAM:
@@ -119,6 +120,15 @@ class BoardFsm(object):
                 self._state, cargo = state_actions[next_event.key](next_event.data, cargo)
             except KeyError:
                 self._state = self._error_handler.handle_error(self._state, next_event.key, next_event.data)
+
+    def _get_event(self):
+        next_event = self._event_q.get()
+        event_logger.log_event_dequeue(next_event)
+        return next_event
+
+    def _send_message(self, message):
+        event_logger.log_send_message(message)
+        self._message_q.put(message)
 
     def _go_to_closed_state(self, ignored_event_data, ignored_cargo):
         self._play_noise(NOISE_CLOSING)
