@@ -1,15 +1,11 @@
-import shop_check_in_exceptions
 from datetime import datetime
-import shop_user
-from usage_logger import log_event
+
+import shop_check_in_exceptions
+import logger.usage as usage_logger
+
 
 NO_TIME = None
 SLOTS = xrange(30)
-LOG_HEADER = 'In Time,Out Time,Machine,Name,Email'
-POD_OPEN_MESSAGE = 'POD Opened the Shop'
-POD_CLOSE_MESSAGE = 'POD Closed the Shop'
-POD_ARRIVE_MESSAGE = 'POD Arrived at the Shop'
-POD_EXIT_MESSAGE = 'POD Left the Shop'
 SLOT_TO_MACHINE_MAP = { 0 : 'Slot 0',
     1 : 'Slot 1',
     2 : 'Slot 2',
@@ -53,7 +49,7 @@ class Shop(object):
         if user.is_proctor() and not self._open:
             self._open = True
             self._pods.append(user)
-            self.log_pod_event(user, POD_OPEN_MESSAGE)
+            usage_logger.log_pod_opens_shop(user)
         elif user.is_proctor():
             raise shop_check_in_exceptions.ShopAlreadyOpenError
         else:
@@ -63,7 +59,7 @@ class Shop(object):
         if self.is_pod(user) and self._empty():
             self._pods = []
             self._open = False
-            self.log_pod_event(user, POD_CLOSE_MESSAGE)
+            usage_logger.log_pod_closes_shop(user)
         elif not self.is_pod(user):
             raise shop_check_in_exceptions.UnauthorizedUserError
         else:
@@ -110,10 +106,10 @@ class Shop(object):
     def change_pod(self, user):
         if user.is_proctor() and not self.is_pod(user):
             self._pods.append(user)
-            self.log_pod_event(user, POD_ARRIVE_MESSAGE)
+            usage_logger.log_pod_arrives_at_shop(user)
         elif self.is_pod(user) and len(self._pods) > 1:
             self._pods.remove(user)
-            self.log_pod_event(user, POD_EXIT_MESSAGE)
+            usage_logger.log_pod_exits_shop(user)
         elif self.is_pod(user):
             raise shop_check_in_exceptions.PodRequiredError
 
@@ -121,21 +117,8 @@ class Shop(object):
         return all(self._occupants[slot] == [] for slot in SLOTS)
 
     def log_exit(self, slot):
-        occupants = self._occupants[slot]
-        for occupant in occupants:
-            start_time = self._start_times[slot]
-            end_time = datetime.now()
-            machine = SLOT_TO_MACHINE_MAP[slot]
-            name = occupant.name
-            email = occupant.email
-            log_mesage = '%s,%s,%s,%s,%s' % (start_time, end_time, machine, name, email)
-            log_event(log_mesage, LOG_HEADER)
-
-    def log_pod_event(self, user, msg):
-        start_time = end_time = datetime.now()
-        machine = msg
-        name = user.name
-        email = user.email
-        log_mesage = '%s,%s,%s,%s,%s' % (start_time, end_time, machine, name, email)
-        log_event(log_mesage, LOG_HEADER)
+        users = self._occupants[slot]
+        for user in users:
+            print "USER EXIT"
+            usage_logger.log_user_exit(user, self._start_times[slot], SLOT_TO_MACHINE_MAP[slot])
 

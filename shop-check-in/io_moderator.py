@@ -6,6 +6,8 @@ import serial
 import event
 
 COM_PORT = 'COM3'
+import logger.all_events as event_logger
+
 BAUD_RATE = 115200
 TIMEOUT_SECONDS = 0.05
 
@@ -30,6 +32,7 @@ class IoModerator(threading.Thread):
                 except Queue.Empty:
                     continue
                 else:
+                    event_logger.log_display_message(message)
                     serial_port.write(message)
                 finally:
                     self._enqueue_events(serial_port)
@@ -38,6 +41,7 @@ class IoModerator(threading.Thread):
         while serial_port.inWaiting():
             message = serial_port.readline()
             new_event = self._convert_message_to_event(message)
+            event_logger.log_event_enqueue(new_event)
             self._event_q.put(new_event)
 
     def _convert_message_to_event(self, message):

@@ -608,3 +608,73 @@ class TestFsmStateTransitions:
         end_state = board.run_fsm()
         assert end_state == fsm.STANDBY
         print
+
+    def test_signin_signout(self):
+        event_q = queue.Queue()
+        message_q = queue.Queue()
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+        board = fsm.BoardFsm(event_q, message_q, shop_user_db)
+
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_INSERT)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_REMOVE)
+        event_q.put(BUTTON_DISCHARGE_USER)
+        event_q.put(TERMINATE_PROGRAM)
+
+        print "\n"
+        end_state = board.run_fsm()
+        assert end_state == fsm.STANDBY
+        print
+
+    def test_signin_signout_partners(self):
+        event_q = queue.Queue()
+        message_q = queue.Queue()
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+        board = fsm.BoardFsm(event_q, message_q, shop_user_db)
+
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_INSERT)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_REMOVE)
+        event_q.put(BUTTON_DISCHARGE_USER)
+        event_q.put(TERMINATE_PROGRAM)
+
+        print "\n"
+        end_state = board.run_fsm()
+        assert end_state == fsm.STANDBY
+        print
+
+    def test_signin_signout_separate(self):
+        event_q = queue.Queue()
+        message_q = queue.Queue()
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+        board = fsm.BoardFsm(event_q, message_q, shop_user_db)
+
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_INSERT)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_INSERT_OTHER)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_REMOVE)
+        event_q.put(BUTTON_DISCHARGE_USER)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_REMOVE_OTHER)
+        event_q.put(BUTTON_DISCHARGE_USER)
+        event_q.put(TERMINATE_PROGRAM)
+
+        print "\n"
+        end_state = board.run_fsm()
+        assert end_state == fsm.STANDBY
+        print

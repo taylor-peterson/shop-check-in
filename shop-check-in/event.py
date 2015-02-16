@@ -15,6 +15,21 @@ BUTTON_DISCHARGE_USER = "B4"
 TERMINATE_PROGRAM = "halt"
 
 
+EVENT_CODE_TO_NAME_MAP = {
+    CARD_SWIPE : "Card Swipe",
+    CARD_INSERT : "Card Insert",
+    CARD_REMOVE : "Card Remove",
+    SWITCH_FLIP_ON : "Switch Flipped On",
+    SWITCH_FLIP_OFF : "Switch Flipped Off",
+    BUTTON_CANCEL : "Cancel Button",
+    BUTTON_CONFIRM : "Confirm Button",
+    BUTTON_MONEY : "Money Button",
+    BUTTON_CHANGE_POD : "Change POD Button",
+    BUTTON_DISCHARGE_USER : "Discharge User Button",
+    TERMINATE_PROGRAM : "Terminate Program Signal",
+}
+
+
 class Event():
     def __init__(self,
                  key="",

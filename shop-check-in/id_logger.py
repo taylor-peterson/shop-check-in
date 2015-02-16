@@ -8,6 +8,8 @@ import pythoncom  # Tie in to Windows events
 
 import event
 
+import logger.all_events as event_logger
+
 ID_READ_LENGTH = 12
 ID_REGEX = ";[0-9]{10}\x00"
 
@@ -43,6 +45,7 @@ class IdLogger(threading.Thread):
             id_number = search_result.group()[2:-2]
 
             new_event = event.Event(event.CARD_SWIPE, id_number)
+            event_logger.log_event_enqueue(new_event)
             self._event_q.put(new_event)
 
         return True  # Need to return true or HookManager will throw a fit.
