@@ -19,27 +19,30 @@ def log(msg, header, log_root_path):
     _append_to_file_safe_with_header(path, msg + '\r\n', header + '\r\n')
 
 
+def _safe_mkdirs(path):
+    try:
+        os.makedirs(_cut_file_name(path))
+    except WindowsError:
+        pass
+
+
 def _append_to_file_safe_with_header(path, msg, header):
     if isinstance(path, list):
         path = apply(os.path.join, path)
-    _make_path_safe(path)
+    _safe_mkdirs(path)
     if not os.path.exists(path):
         with open(path, 'wb') as file_:
             file_.write(header)
     with open(path, 'ab') as file_:
         file_.write(msg)
 
-def _make_path_safe(path):
-    if not os.path.exists(path):
-        head, tail = os.path.split(path)
-        if not head == '':
-            _make_path_safe(head)
-        if not re.match('^.*\..+$', tail):
-            _safe_mkdir(path)
 
-def _safe_mkdir(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
+def _cut_file_name(path):
+    head, tail = os.path.split(path)
+    if '.' in tail:
+        return head
+    else:
+        return path
 
 
 def datetime_as_time_string(time):
