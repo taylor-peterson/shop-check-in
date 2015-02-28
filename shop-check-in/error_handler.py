@@ -31,7 +31,7 @@ class ErrorHandler(object):
             shop_check_in_exceptions.PodRequiredError: "\0ERR - ONLY POD\n\rCANNOT SIGN OUT",
             shop_user.DEFAULT_NAME: "\0ERR - INSUFFICIENT PERMISSIONS",
             event.CARD_SWIPE: "\0ERR - IGNORING SWIPE. PLEASE CONFIRM",
-            event.CARD_REMOVE: "\0ERR - REINSERT\n\rCARD(S)/CONFIRM",
+            event.CARD_REMOVE: "\0ERR - REINSERT\n\rOR CONFIRM",
             event.CARD_INSERT: "\0ERR - REMOVE CARD(S)",
             }
 
@@ -94,7 +94,7 @@ class ErrorHandler(object):
 
             next_event = self._event_q.get()
             if next_event.key == event.TERMINATE_PROGRAM:
-                # TODO: Find better way to termiinate prgm from error, currently need 2 signals
+                # TODO: Find better way to terminate prgm from error, currently need 2 signals
                 self._event_q.put(event.Event(event.TERMINATE_PROGRAM))
                 return return_state
 

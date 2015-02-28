@@ -53,6 +53,7 @@ class Shop(object):
         return occupants
 
     def get_user_s(self, slot):
+        slot = int(slot)
         return self._occupants[slot]
 
     def get_user_s_name_and_email(self, slot):
