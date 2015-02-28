@@ -1,5 +1,6 @@
 import Queue as queue
 import threading
+import sys
 
 import winsound
 
@@ -39,9 +40,10 @@ def _process_card_swipe(function_to_decorate):
         def card_swipe_processor(self, id_number, cargo):
             try:
                 user = self._shop_user_database.get_shop_user(id_number)
-            except shop_check_in_exceptions.NonexistentUserError as error:
+            except shop_check_in_exceptions.NonexistentUserError:
+                exc_type = sys.exc_type
                 self._play_noise(NOISE_ERROR)
-                return self._error_handler.handle_error(self._state, error), cargo
+                return self._error_handler.handle_error(self._state, exc_type), cargo
             else:
                 return function_to_decorate(self, user, cargo)
 
@@ -59,17 +61,17 @@ class BoardFsm(object):
         self._error_handler = error_handler.ErrorHandler(event_q, message_q,  self._shop)
 
         self._state_data = {
-            CLOSED: ("\0Shop closed.\n\rProctor swipe",
+            CLOSED: ("\0SHOP CLOSED.\n\rPROCTOR SWIPE",
                      {event.CARD_SWIPE: self._closed_process_card_swipe}),
 
-            OPENING: ("\0Starting up!\n\rFlip switch",
+            OPENING: ("\0STARTING UP!\n\rFLIP SWITCH",
                       {event.BUTTON_CANCEL: self._go_to_closed_state,
                        event.SWITCH_FLIP_ON: self._opening_process_switch_flip}),
 
-            STANDBY: ("\0Board locked.\n\rPOD swipe",
+            STANDBY: ("\0BOARD LOCKED.\n\rPOD SWIPE",
                       {event.CARD_SWIPE: self._standby_process_card_swipe}),
 
-            UNLOCKED: ("\0Board Unlocked.\n\rTake any action",
+            UNLOCKED: ("\0BOARD UNLOCKED.\n\rTAKE ANY ACTION",
                        {event.BUTTON_CANCEL: self._go_to_standby_state,
                         event.CARD_SWIPE: self._unlocked_process_card_swipe,
                         event.CARD_REMOVE: self._go_to_remove_user_state,
@@ -77,25 +79,25 @@ class BoardFsm(object):
                         event.BUTTON_CHANGE_POD: self._go_to_change_pod_state,
                         event.SWITCH_FLIP_OFF: self._unlocked_process_closing_shop}),
 
-            ADDING_USER: ("\0Adding user.\n\rSwipe/insert card",
+            ADDING_USER: ("\0ADDING USER.\n\rSWIPE/INSRT CARD",
                           {event.CARD_SWIPE: self._adding_user_process_card_swipe,
                            event.CARD_INSERT: self._adding_user_s_process_slot,
                            event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            ADDING_USERS: ("\0Adding users.\n\rInsert cards",
+            ADDING_USERS: ("\0ADDING USERS.\n\rINSERT CARDS",
                            {event.CARD_INSERT: self._adding_user_s_process_slot,
                             event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            REMOVING_USER: ("\0Removing user(s).\n\r(R)nsrt/clr/chrg",
+            REMOVING_USER: ("\0REMOVING USER(S).\n\r(R)NSRT/CLR/CHRG",
                             {event.CARD_INSERT: self._removing_user_process_slot,
                              event.BUTTON_DISCHARGE_USER: self._removing_user_process_discharge,
                              event.BUTTON_MONEY: self._removing_user_process_charge}),
 
-            CLEARING_DEBT: ("\0Clearing debt.\n\rSwipe card",
+            CLEARING_DEBT: ("\0CLEARING DEBT.\n\rSWIPE CARD",
                             {event.CARD_SWIPE: self._clearing_debt_process_card_swipe,
                              event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            CHANGING_POD: ("\0Changing POD.\n\rSwipe card",
+            CHANGING_POD: ("\0CHANGING POD.\n\rSWIPE CARD",
                            {event.CARD_SWIPE: self._changing_pod_process_card_swipe,
                             event.BUTTON_CANCEL: self._go_to_standby_state})
             }
@@ -141,9 +143,10 @@ class BoardFsm(object):
     def _closed_process_card_swipe(self, user, ignored_cargo):
         try:
             user.is_proctor()
-        except shop_check_in_exceptions.ShopUserError as error:
+        except shop_check_in_exceptions.ShopUserError:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, error), ignored_cargo
+            return self._error_handler.handle_error(self._state, exc_type), ignored_cargo
         else:
             self._play_noise(NOISE_SUCCESS)
             return OPENING, user
@@ -160,15 +163,17 @@ class BoardFsm(object):
             return UNLOCKED, user
         else:
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, shop_user.DEFAULT_NAME), ignored_cargo
+            return (self._error_handler.handle_error(self._state, shop_check_in_exceptions.NonPodError),
+                    ignored_cargo)
 
     @_process_card_swipe
     def _unlocked_process_card_swipe(self, user, ignored_cargo):
         try:
             user.is_shop_certified()
-        except shop_check_in_exceptions.ShopUserError as error:
+        except shop_check_in_exceptions.ShopUserError:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, error), ignored_cargo
+            return self._error_handler.handle_error(self._state, exc_type), ignored_cargo
         else:
             self._play_noise(NOISE_SUCCESS)
             return ADDING_USER, [user]
@@ -176,9 +181,10 @@ class BoardFsm(object):
     def _unlocked_process_closing_shop(self, ignored_event_data, user):
         try:
             self._shop.close_(user)
-        except shop_check_in_exceptions.ShopOccupiedError as error:
+        except shop_check_in_exceptions.ShopOccupiedError:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, error), user
+            return self._error_handler.handle_error(self._state, exc_type), user
         else:
             self._play_noise(NOISE_CLOSING)
             return CLOSED, None
@@ -187,9 +193,10 @@ class BoardFsm(object):
     def _adding_user_process_card_swipe(self, second_user, first_user):
         try:
             second_user.is_shop_certified()
-        except shop_check_in_exceptions.ShopUserError as error:
+        except shop_check_in_exceptions.ShopUserError:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, error), first_user
+            return self._error_handler.handle_error(self._state, exc_type), first_user
         else:
             self._play_noise(NOISE_SUCCESS)
             return ADDING_USERS, first_user + [second_user]
@@ -223,9 +230,10 @@ class BoardFsm(object):
     def _clearing_debt_process_card_swipe(self, user, ignored_cargo):
         try:
             self._shop_user_database.clear_debt(user)
-        except shop_check_in_exceptions.NonexistentUserError as error:
+        except shop_check_in_exceptions.NonexistentUserError:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, error), ignored_cargo
+            return self._error_handler.handle_error(self._state, exc_type), ignored_cargo
         else:
             self._play_noise(NOISE_CLEARING_DEBT)
             return STANDBY, user
@@ -234,9 +242,11 @@ class BoardFsm(object):
     def _changing_pod_process_card_swipe(self, user, ignored_cargo):
         try:
             self._shop.change_pod(user)
-        except shop_check_in_exceptions.ShopCheckInError as error:
+        except shop_check_in_exceptions.ShopCheckInError:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
-            return self._error_handler.handle_error(self._state, error), ignored_cargo
+            print exc_type
+            return self._error_handler.handle_error(self._state, exc_type), ignored_cargo
         else:
             self._play_noise(NOISE_SUCCESS)
             return STANDBY, None

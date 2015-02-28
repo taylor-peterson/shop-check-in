@@ -1,5 +1,6 @@
 import cPickle
 import os
+import sys
 
 import gspread
 import gspread.exceptions
@@ -53,7 +54,8 @@ class ShopUserDatabase(object):
         try:
             self._shop_user_database[user.id_number].debt = new_debt
         except KeyError:
-            raise shop_check_in_exceptions.NonexistentUserError
+            exc_traceback = sys.exc_traceback
+            raise shop_check_in_exceptions.NonexistentUserError, None, exc_traceback
         else:
             self._out_of_sync_users.append(user)
             self._synchronize_databases()
@@ -63,7 +65,8 @@ class ShopUserDatabase(object):
             try:
                 self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._spreadsheet_name)
             except (gspread.AuthenticationError, IOError):
-                raise shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError
+                exc_traceback = sys.exc_traceback
+                raise shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError, None, exc_traceback
         else:
             try:
                 self._shop_user_database_google_worksheet.test_connection()
@@ -76,7 +79,8 @@ class ShopUserDatabase(object):
             self._connect_to_google_spreadsheet()
             user_data = self._shop_user_database_google_worksheet.get_shop_user_data(id_number)
         except (shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError, gspread.exceptions.CellNotFound, IOError):
-            raise shop_check_in_exceptions.NonexistentUserError
+            exc_traceback = sys.exc_traceback
+            raise shop_check_in_exceptions.NonexistentUserError, None, exc_traceback
         else:
             user = shop_user.ShopUser(user_data)
             self._shop_user_database[user.id_number] = user

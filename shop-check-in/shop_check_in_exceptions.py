@@ -49,6 +49,9 @@ class OutOfDateTestError(ShopUserError):
 class NonProctorError(ShopUserError):
     pass
 
+class NonPodError(ShopUserError):
+    pass
+
 # endregion
 
 

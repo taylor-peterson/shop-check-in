@@ -30,10 +30,14 @@ class Shop(object):
         return user in self._pods
 
     def add_user_s_to_slot(self, user_s, slot):
+        slot = int(slot)
         if all(user.is_shop_certified() for user in user_s):
             self._occupants[slot] = user_s
 
     def replace_or_transfer_user(self, slot, prev_slot):
+        slot = int(slot)
+        prev_slot = int(prev_slot)
+
         if slot != prev_slot:
             self._occupants[slot] = self._occupants[prev_slot]
             self._occupants[prev_slot] = []
@@ -41,11 +45,13 @@ class Shop(object):
             pass  # The user(s) remain in their current location.
 
     def discharge_user_s(self, slot):
+        slot = int(slot)
         occupants = self._occupants[slot]
         self._occupants[slot] = []
         return occupants
 
     def get_user_s_name_and_email(self, slot):
+        slot = int(slot)
         return [user.get_name_and_email() for user in self._occupants[slot]]
 
     def change_pod(self, user):

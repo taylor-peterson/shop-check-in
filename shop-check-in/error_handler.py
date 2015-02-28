@@ -6,7 +6,7 @@ import Queue as queue
 
 import winsound
 
-DEFAULT_ERROR_MESSAGE = "\0Action not recognized."
+DEFAULT_ERROR_MESSAGE = "\0ACTION NOT RECOGNIZED."
 ERROR_RESOLVED = "error_resolved"
 ERROR_NOT_RESOLVED = "error_not_resolved"
 
@@ -19,22 +19,25 @@ class ErrorHandler(object):
         self._errors = queue.LifoQueue()
 
         self._messages_to_display = {
-            shop_check_in_exceptions.MoneyOwedError: "\0User owes money.",
-            shop_check_in_exceptions.NonProctorError: "\0User is not a proctor.",
-            shop_check_in_exceptions.ShopOccupiedError: "\0Shop is currently occupied.",
-            shop_check_in_exceptions.OutOfDateTestError: "\0Out-of-date safety test.",
-            shop_check_in_exceptions.ShopAlreadyOpenError: "\0Shop is already open.",
-            shop_check_in_exceptions.PodRequiredError: "\0Only Proctor can't sign out",
-            shop_user.DEFAULT_NAME: "\0User does not have permissions for that action.",
-            event.CARD_SWIPE: "\0ERR - Ignoring swipe. Please confirm.",
-            event.CARD_REMOVE: "\0ERR - Reinsert card(s) or confirm",
-            event.CARD_INSERT: "\0ERR - Remove card(s)",
+            shop_check_in_exceptions.NonexistentUserError: "\0NONEXISTENT USER",
+            shop_check_in_exceptions.InvalidUserError: "\0ERR\n\rINVALID USER",
+            shop_check_in_exceptions.MoneyOwedError: "\0ERR\n\rUSER OWES MONEY",
+            shop_check_in_exceptions.NonProctorError: "\0ERR - USER IS\n\rNOT A PROCTOR",
+            shop_check_in_exceptions.NonPodError: "\0ERR - USER IS\n\rNOT A POD",
+            shop_check_in_exceptions.ShopOccupiedError: "\0ERR\n\rSHOP IS OCCUPIED",
+            shop_check_in_exceptions.OutOfDateTestError: "\0ERR - OUT-OF-DATE\n\rSAFETY TEST",
+            shop_check_in_exceptions.ShopAlreadyOpenError: "\0ERR\n\rSHOP ALREADY OPEN",
+            shop_check_in_exceptions.PodRequiredError: "\0ERR - ONLY POD\n\rCANNOT SIGN OUT",
+            shop_user.DEFAULT_NAME: "\0ERR - INSUFFICIENT PERMISSIONS",
+            event.CARD_SWIPE: "\0ERR - IGNORING SWIPE. PLEASE CONFIRM",
+            event.CARD_REMOVE: "\0ERR - REINSERT\n\rCARD(S)/CONFIRM",
+            event.CARD_INSERT: "\0ERR - REMOVE CARD(S)",
             }
 
         self._default_event_to_action_map = {
             event.CARD_INSERT: self._handle_card_insert_default,
             event.CARD_REMOVE: self._handle_card_remove_default,
-            event.BUTTON_CONFIRM: self._handle_confirm_default
+            event.BUTTON_CONFIRM: self._handle_confirm_default,
         }
 
         self._error_specific_event_to_action_map = {
@@ -44,7 +47,11 @@ class ErrorHandler(object):
             },
             event.CARD_INSERT: {
                 event.CARD_REMOVE: self._handle_card_uninsert
+            },
+            shop_check_in_exceptions.ShopOccupiedError: {
+                event.SWITCH_FLIP_ON: self._handle_shop_open
             }
+
         }
 
     def handle_error(self, current_state, error, error_data=None):
@@ -96,25 +103,29 @@ class ErrorHandler(object):
             self.handle_error(None, event.CARD_REMOVE, new_slot)
             return ERROR_NOT_RESOLVED
 
-    def _handle_card_removed_not_reinserted(self, unused_data = None, old_slot = None):
+    def _handle_card_removed_not_reinserted(self, unused_data=None, old_slot=None):
         assert old_slot is not None
         print "User %s, left the shop!" % (str(self._shop.get_user_s_name_and_email(old_slot)))
         # TODO: Send angry email
         self._shop.discharge_user_s(old_slot)
-
-    def _handle_card_insert_default(self, new_slot, unused_error_data = None):
-        self.handle_error(None, event.CARD_INSERT, new_slot)
-        return ERROR_NOT_RESOLVED
-
-    def _handle_card_remove_default(self, new_slot, unused_error_data = None):
-        self.handle_error(None, event.CARD_INSERT, new_slot)
-        return ERROR_NOT_RESOLVED
-
-    def _handle_confirm_default(self, unused_data = None, unused_error_data = None):
         return ERROR_RESOLVED
 
-    def _handle_unrecognized_event(self, unused_data = None, unused_error_data = None):
+    def _handle_card_insert_default(self, new_slot, unused_error_data=None):
+        self.handle_error(None, event.CARD_INSERT, new_slot)
         return ERROR_NOT_RESOLVED
+
+    def _handle_card_remove_default(self, new_slot, unused_error_data=None):
+        self.handle_error(None, event.CARD_INSERT, new_slot)
+        return ERROR_NOT_RESOLVED
+
+    def _handle_confirm_default(self, unused_data=None, unused_error_data=None):
+        return ERROR_RESOLVED
+
+    def _handle_unrecognized_event(self, unused_data=None, unused_error_data=None):
+        return ERROR_NOT_RESOLVED
+    
+    def _handle_shop_open(self, unused_date=None, unused_error_data=None):
+        return ERROR_RESOLVED
 
 # Button Errors - Explain error, request acknowledge, return
 # Physical Errors
