@@ -1,9 +1,9 @@
 import shop
+import fsm
 import shop_user
 import shop_check_in_exceptions
 import event
-import Queue as queue
-
+from mailer import Mailer
 import winsound
 
 DEFAULT_ERROR_MESSAGE = "\0ACTION NOT RECOGNIZED."
@@ -16,8 +16,9 @@ class ErrorHandler(object):
         self._event_q = event_q
         self._message_q = message_q
         self._shop = shop_
-        self._errors = queue.LifoQueue()
+        self._mailer = Mailer()
 
+        # TODO: Right now errors are sometimes passed in as events, sometimes errors. Homogenize.
         self._messages_to_display = {
             shop_check_in_exceptions.NonexistentUserError: "\0NONEXISTENT USER",
             shop_check_in_exceptions.InvalidUserError: "\0ERR\n\rINVALID USER",
@@ -34,6 +35,12 @@ class ErrorHandler(object):
             event.CARD_INSERT: "\0ERR - REMOVE CARD(S)",
             }
 
+        self._no_confirm_state_error_combos = [
+            (fsm.CLOSED, shop_check_in_exceptions.ShopUserError),
+            (fsm.CLOSED, shop_check_in_exceptions.NonexistentUserError),
+            (fsm.STANDBY, shop_check_in_exceptions.UnauthorizedUserError)
+        ]
+
         self._default_event_to_action_map = {
             event.CARD_INSERT: self._handle_card_insert_default,
             event.CARD_REMOVE: self._handle_card_remove_default,
@@ -46,7 +53,8 @@ class ErrorHandler(object):
                 event.BUTTON_CONFIRM: self._handle_card_removed_not_reinserted
             },
             event.CARD_INSERT: {
-                event.CARD_REMOVE: self._handle_card_uninsert
+                event.CARD_REMOVE: self._handle_card_uninsert,
+                event.BUTTON_CONFIRM: self._handle_unrecognized_event
             },
             shop_check_in_exceptions.ShopOccupiedError: {
                 event.SWITCH_FLIP_ON: self._handle_shop_open
@@ -54,29 +62,58 @@ class ErrorHandler(object):
 
         }
 
-    def handle_error(self, current_state, error, error_data=None):
+    def _requires_no_confirmation(self, state, error):
+        for (no_confirm_state, no_confirm_error) in self._no_confirm_state_error_combos:
+            if state == no_confirm_state and self._same_error(error, no_confirm_error):
+                print "The error %s from state %s requires no confirmation" % (str(error), str(state))
+                return True
+        return False
+
+    @staticmethod
+    def _same_error(e, template_e):
+        """
+        Determines if e is an instance of error class template_e OR if e equals template_e
+        """
+        print "Same error:", str(e), str(template_e)
+        try:
+            return isinstance(e, template_e)
+        except TypeError:
+            return e == template_e
+
+    def handle_error(self, return_state, error, error_data=None):
         # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
+
+        self._store_error_frame(return_state, error, error_data)
 
         while True:
 
-            error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
-            self._message_q.put(error_msg)
+            self._report_error()
+
+            if self._requires_no_confirmation(return_state, error):
+                return return_state
 
             next_event = self._event_q.get()
-
             if next_event.key == event.TERMINATE_PROGRAM:
-                # TODO: Find better way to term. from error, currently need 2 signals
+                # TODO: Find better way to termiinate prgm from error, currently need 2 signals
                 self._event_q.put(event.Event(event.TERMINATE_PROGRAM))
-                return current_state
+                return return_state
 
             action = self._get_action(error, next_event)
 
             result = action(next_event.data, error_data)
 
             if result == ERROR_RESOLVED:
-                return current_state
-        
-        return current_state
+                return return_state
+
+    def _store_error_frame(self, return_state, error, error_data):
+        self._return_state = return_state
+        self._error = error
+        self._error_data = error_data
+
+    def _report_error(self):
+        error_msg = self._messages_to_display.get(self._error, DEFAULT_ERROR_MESSAGE)
+        error_msg += str(self._error_data) if self._error_data else ""
+        self._message_q.put(error_msg)
 
     def _get_action(self, error, next_event):
         try:
@@ -105,8 +142,10 @@ class ErrorHandler(object):
 
     def _handle_card_removed_not_reinserted(self, unused_data=None, old_slot=None):
         assert old_slot is not None
-        print "User %s, left the shop!" % (str(self._shop.get_user_s_name_and_email(old_slot)))
-        # TODO: Send angry email
+        self._message_q.put("User %s, left the shop!" %
+                            (str(self._shop.get_user_s_name_and_email(old_slot))))
+        users = self._shop.get_user_s(old_slot)
+        self._mailer._send_id_card_email_s(users)
         self._shop.discharge_user_s(old_slot)
         return ERROR_RESOLVED
 
@@ -115,7 +154,7 @@ class ErrorHandler(object):
         return ERROR_NOT_RESOLVED
 
     def _handle_card_remove_default(self, new_slot, unused_error_data=None):
-        self.handle_error(None, event.CARD_INSERT, new_slot)
+        self.handle_error(None, event.CARD_REMOVE, new_slot)
         return ERROR_NOT_RESOLVED
 
     def _handle_confirm_default(self, unused_data=None, unused_error_data=None):
@@ -123,11 +162,6 @@ class ErrorHandler(object):
 
     def _handle_unrecognized_event(self, unused_data=None, unused_error_data=None):
         return ERROR_NOT_RESOLVED
-    
+
     def _handle_shop_open(self, unused_date=None, unused_error_data=None):
         return ERROR_RESOLVED
-
-# Button Errors - Explain error, request acknowledge, return
-# Physical Errors
-#    Card removed - Explain (Reinsert OR Acknowledge w/ card swipe -> Email)
-#    Card inserted - Explain (Remove)

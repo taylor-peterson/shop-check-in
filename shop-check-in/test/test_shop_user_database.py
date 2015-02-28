@@ -37,8 +37,8 @@ class TestShopUserDatabase(object):
         user = shop_user_db.get_shop_user(sample_users.USER_CERTIFIED.id_number)
 
         assert user.id_number == sample_users.USER_CERTIFIED.id_number
-        assert user._name == sample_users.USER_CERTIFIED._name
-        assert user._email == sample_users.USER_CERTIFIED._email
+        assert user.name == sample_users.USER_CERTIFIED.name
+        assert user.email == sample_users.USER_CERTIFIED.email
         assert user._test_date == sample_users.USER_CERTIFIED._test_date
         assert user.debt == sample_users.USER_CERTIFIED.debt
         assert user._proctor == sample_users.USER_CERTIFIED._proctor

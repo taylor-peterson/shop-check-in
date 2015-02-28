@@ -40,14 +40,14 @@ class ShopUser(object):
         self.validated_user_data = self._validate_user_data(user_data)
 
         self.id_number = self.validated_user_data[ID]
-        self._name = self.validated_user_data[NAME]
-        self._email = self.validated_user_data[EMAIL]
+        self.name = self.validated_user_data[NAME]
+        self.email = self.validated_user_data[EMAIL]
         self._test_date = self.validated_user_data[TEST_DATE]
         self.debt = self.validated_user_data[DEBT]
         self._proctor = self.validated_user_data[PROCTOR]
 
     def is_shop_certified(self):
-        if self._name is DEFAULT_NAME:
+        if self.name is DEFAULT_NAME:
             raise shop_check_in_exceptions.InvalidUserError
         elif not self._has_valid_safety_test():
             raise shop_check_in_exceptions.OutOfDateTestError
@@ -62,7 +62,7 @@ class ShopUser(object):
         return self.is_shop_certified()
 
     def get_name_and_email(self):
-        return (self._name, self._email)
+        return (self.name, self.email)
 
     def _has_valid_safety_test(self):
         today = datetime.date.today()
@@ -88,8 +88,8 @@ class ShopUser(object):
     def __eq__(self, other):
         if (self.__class__ == other.__class__ and
                 self.id_number == other.id_number and
-                self._name == other._name and
-                self._email == other._email and
+                self.name == other._name and
+                self.email == other._email and
                 self._test_date == other._test_date and
                 self.debt == other.debt and
                 self._proctor == other._proctor):
