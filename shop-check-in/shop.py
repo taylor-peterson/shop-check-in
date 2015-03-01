@@ -1,42 +1,11 @@
 from datetime import datetime
+from slots import SLOTS, get_machine_name
 
 import shop_check_in_exceptions
 import logger.usage as usage_logger
 
 
 NO_TIME = None
-SLOTS = xrange(30)
-SLOT_TO_MACHINE_MAP = { 0 : 'Slot 0',
-    1 : 'Slot 1',
-    2 : 'Slot 2',
-    3 : 'Slot 3',
-    4 : 'Slot 4',
-    5 : 'Slot 5',
-    6 : 'Slot 6',
-    7 : 'Slot 7',
-    8 : 'Slot 8',
-    9 : 'Slot 9',
-    10 : 'Slot 10',
-    11 : 'Slot 11',
-    12 : 'Slot 12',
-    13 : 'Slot 13',
-    14 : 'Slot 14',
-    15 : 'Slot 15',
-    16 : 'Slot 16',
-    17 : 'Slot 17',
-    18 : 'Slot 18',
-    19 : 'Slot 19',
-    20 : 'Slot 20',
-    21 : 'Slot 21',
-    22 : 'Slot 22',
-    23 : 'Slot 23',
-    24 : 'Slot 24',
-    25 : 'Slot 25',
-    26 : 'Slot 26',
-    27 : 'Slot 27',
-    28 : 'Slot 28',
-    29 : 'Slot 29'
-}
 
 class Shop(object):
     def __init__(self):
@@ -120,5 +89,22 @@ class Shop(object):
         users = self._occupants[slot]
         for user in users:
             print "USER EXIT"
-            usage_logger.log_user_exit(user, self._start_times[slot], SLOT_TO_MACHINE_MAP[slot])
+            usage_logger.log_user_exit(user, self._start_times[slot], get_machine_name(slot))
 
+    def machine_name(self, slot):
+        return get_machine_name(slot)
+
+    def current_machine_user_s(self, slot):
+        return self._occupants[slot]
+
+    def current_machine_start_time(self, slot):
+        return self._start_times[slot]
+
+    def is_machine_in_use(self, slot):
+        return self._occupants[slot] != []
+
+    def is_open(self):
+        return self._open
+
+    def pods(self):
+        return self._pods

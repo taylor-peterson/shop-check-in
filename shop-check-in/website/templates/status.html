@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>
+        HMC Machine Shop
+    </title>
+    <link type="text/css" href="static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link type="text/css" href="static/css/status.css" rel="stylesheet">
+    <link type="img/vnd.microsoft.ico" href="static/img/favicon.ico" rel="icon">
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">HMC Shop</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#">Status</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="container">
+
+    <div class="starter-template">
+        <h1>Shop Status</h1>
+        {% if status['open'] %}
+        <p class="lead">The shop is open</p>
+        <p>Proctors: {{ status.pods }}</p>
+        <div class="row">
+            <div class="col-md-4">
+                <h3>Main Shop</h3>
+                <table class="table">
+                    <thead><tr>
+                        <th>Machine</th>
+                        <th>User</th>
+                        <th>Start Time</th>
+                    </tr></thead>
+                    {% for specific_machine in status.main.machines %}
+                        {% set machine_status = status.main.machines[specific_machine] %}
+                        <tr class="{{ 'danger' if machine_status.in_use else 'success' }}" >
+                            <td>{{ specific_machine }}</td>
+                            <td>{{ machine_status.users if machine_status.in_use else '' }}</td>
+                            <td>{{ machine_status.start_time if machine_status.in_use else '' }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <p>Other Occupants:</p>
+                <ul class="list-group">
+                    {% for user in status.main.limbo %}
+                    <li class="list-group-item">{{ user }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h3>Wood Shop</h3>
+                <table class="table">
+                    <thead><tr>
+                        <th>Machine</th>
+                        <th>User</th>
+                        <th>Start Time</th>
+                    </tr></thead>
+                    {% for specific_machine in status.wood.machines %}
+                        {% set machine_status = status.wood.machines[specific_machine] %}
+                        <tr class="{{ 'danger' if machine_status.in_use else 'success' }}" >
+                            <td>{{ specific_machine }}</td>
+                            <td>{{ machine_status.users }}</td>
+                            <td>{{ machine_status.start_time }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <p>Other Occupants:</p>
+                <ul class="list-group">
+                    {% for user in status.wood.limbo %}
+                    <li class="list-group-item">{{ user }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h3>Sheet Metal Shop</h3>
+                <table class="table">
+                    <thead><tr>
+                        <th>Machine</th>
+                        <th>User</th>
+                        <th>Start Time</th>
+                    </tr></thead>
+                    {% for specific_machine in status.sheet.machines %}
+                        {% set machine_status = status.sheet.machines[specific_machine] %}
+                        <tr class="{{ 'danger' if machine_status.in_use else 'success' }}" >
+                            <td>{{ specific_machine }}</td>
+                            <td>{{ machine_status.users }}</td>
+                            <td>{{ machine_status.start_time }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <p>Other Occupants:</p>
+                <ul class="list-group">
+                    {% for user in status.sheet.limbo %}
+                    <li class="list-group-item">{{ user }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% else %}
+        <p class="lead">The shop is closed</p>
+        {% endif %}
+    </div>
+
+</div><!-- /.container -->
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="./static/bootstrap/js/bootstrap.min.js"></script>
+</body>
+</html>
