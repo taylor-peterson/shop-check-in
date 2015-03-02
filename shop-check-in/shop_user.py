@@ -79,6 +79,7 @@ class ShopUser(object):
             validated_user_data[TEST_DATE] = dateutil.parser.parse(user_data[TEST_DATE])
             validated_user_data[DEBT] = int(float(user_data[DEBT]))
             validated_user_data[PROCTOR] = user_data[PROCTOR] == IS_PROCTOR
+            validated_user_data[ID] = user_data[ID].lstrip('0')[:8]
         except ValueError:
             exc_traceback = sys.exc_traceback
             raise shop_check_in_exceptions.InvalidUserError, None, exc_traceback  # TODO: where to catch this error?
