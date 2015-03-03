@@ -43,6 +43,8 @@ class IoModerator(threading.Thread):
     def _convert_message_to_event(self, message):
         event_key = message[EVENT_KEY_START_INDEX:EVENT_KEY_END_INDEX]
         event_data = message[EVENT_DATA_START_INDEX:]  # Empty list if index is out of bounds.
+        if event_key == event.CARD_INSERT or event_key == event.CARD_REMOVE:
+            event_data = int(event_data)
         return event.Event(event_key, event_data)
 
 
