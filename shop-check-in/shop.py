@@ -56,9 +56,9 @@ class Shop(object):
         slot = int(slot)
         return self._occupants[slot]
 
-    def get_user_s_name_and_email(self, slot):
+    def get_user_s_name(self, slot):
         slot = int(slot)
-        return [user.get_name_and_email() for user in self._occupants[slot]]
+        return [user.name for user in self._occupants[slot]]
 
     def change_pod(self, user):
         if user.is_proctor() and not self.is_pod(user):

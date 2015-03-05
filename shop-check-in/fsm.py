@@ -88,7 +88,7 @@ class BoardFsm(object):
                            {event.CARD_INSERT: self._adding_user_s_process_slot,
                             event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            REMOVING_USER: ("\0REMOVING USER(S).\n\r(R)NSRT/CLR/CHRG",
+            REMOVING_USER: ("\0REMOVING USER(S)\n\r(R)NSRT/CLR/CHRG",
                             {event.CARD_INSERT: self._removing_user_process_slot,
                              event.BUTTON_DISCHARGE_USER: self._removing_user_process_discharge,
                              event.BUTTON_MONEY: self._removing_user_process_charge}),
@@ -109,8 +109,8 @@ class BoardFsm(object):
             state_message = self._state_data[self._state][MESSAGE]
             state_actions = self._state_data[self._state][ACTIONS_DICT]
 
-            self._message_q.put(state_message)
-            
+            self._send_message_fommat_safe(state_message)
+
             next_event = self._event_q.get()
             print next_event.key
 
@@ -121,6 +121,9 @@ class BoardFsm(object):
                 self._state, cargo = state_actions[next_event.key](next_event.data, cargo)
             except KeyError:
                 self._state = self._error_handler.handle_error(self._state, next_event.key, next_event.data)
+
+    def _send_message_fommat_safe(self, msg):
+        self._message_q.put(io_moderator.safe_format_msg(msg))
 
     def _go_to_closed_state(self, ignored_event_data, ignored_cargo):
         self._play_noise(NOISE_CLOSING)
@@ -148,6 +151,7 @@ class BoardFsm(object):
             self._play_noise(NOISE_ERROR)
             return self._error_handler.handle_error(self._state, error, user.debt), ignored_cargo
         except shop_check_in_exceptions.ShopUserError as  error:
+            exc_type = sys.exc_type
             self._play_noise(NOISE_ERROR)
             return self._error_handler.handle_error(self._state, exc_type), ignored_cargo
         else:

@@ -4,6 +4,12 @@ import shop_user
 from shop_user_database import PATH_LOGIN_INFO
 
 EMAIL_TEMPLATE = """From: From Person <%s>
+;0401624136?
+;0503204771?
+;0401624136?
+;0401624136?
+;0401624136?
+;0503204771?
 To: To Person <%s>
 MIME-Version: 1.0
 Content-type: text/html
@@ -48,9 +54,16 @@ class Mailer(object):
         message = self._make_id_card_email(user)
         server = smtplib.SMTP('smtp.gmail.com:587')
         server.starttls()
-        server.login(self._username, self._password)
-        server.sendmail(self._username, user.email, message)
-        server.quit()
+        try:
+            server.login(self._username, self._password)
+        except:
+            print "Could not login to the python server!"
+        else:
+            try:
+                server.sendmail(self._username, user.email, message)
+                server.quit()
+            except:
+                print "Could not send mmail to the the address %s" % user.email
 
     def _make_id_card_email(self, user):
         body =  EMAIL_BODY_TEMPLATE % (user.name)

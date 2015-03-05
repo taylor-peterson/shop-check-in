@@ -3,10 +3,11 @@ import fsm
 import shop_user
 import shop_check_in_exceptions
 import event
+import io_moderator
 from mailer import Mailer
 import winsound
 
-DEFAULT_ERROR_MESSAGE = "\0ACTION NOT RECOGNIZED."
+DEFAULT_ERROR_MESSAGE = "\0ACTION NOT\n\rRECOGNIZED. CNFM"
 ERROR_RESOLVED = "error_resolved"
 ERROR_NOT_RESOLVED = "error_not_resolved"
 
@@ -17,27 +18,28 @@ class ErrorHandler(object):
         self._message_q = message_q
         self._shop = shop_
         self._mailer = Mailer()
-
         # TODO: Right now errors are sometimes passed in as events, sometimes errors. Homogenize.
         self._messages_to_display = {
-            shop_check_in_exceptions.NonexistentUserError: "\0NONEXISTENT USER",
-            shop_check_in_exceptions.InvalidUserError: "\0ERR\n\rINVALID USER",
-            shop_check_in_exceptions.MoneyOwedError: "\0ERR\n\rUSER OWES MONEY",
+            shop_check_in_exceptions.NonexistentUserError: "\0NONEXISTENT\n\rUSER",
+            shop_check_in_exceptions.InvalidUserError: "\0ERR - INVALID\n\rUSER - CONFIRM",
+            shop_check_in_exceptions.MoneyOwedError: "\0ERR - USER OWES\n\rMONEY - CONFIRM",
             shop_check_in_exceptions.NonProctorError: "\0ERR - USER IS\n\rNOT A PROCTOR",
             shop_check_in_exceptions.NonPodError: "\0ERR - USER IS\n\rNOT A POD",
             shop_check_in_exceptions.ShopOccupiedError: "\0ERR\n\rSHOP IS OCCUPIED",
-            shop_check_in_exceptions.OutOfDateTestError: "\0ERR - OUT-OF-DATE\n\rSAFETY TEST",
-            shop_check_in_exceptions.ShopAlreadyOpenError: "\0ERR\n\rSHOP ALREADY OPEN",
+            shop_check_in_exceptions.OutOfDateTestError: "\0ERR - EXPIRED\n\rSAFETY TEST",
+            shop_check_in_exceptions.ShopAlreadyOpenError: "\0ERR SHOP\n\rALREADY OPEN",
             shop_check_in_exceptions.PodRequiredError: "\0ERR - ONLY POD\n\rCANNOT SIGN OUT",
-            shop_user.DEFAULT_NAME: "\0ERR - INSUFFICIENT PERMISSIONS",
-            event.CARD_SWIPE: "\0ERR - IGNORING SWIPE. PLEASE CONFIRM",
-            event.CARD_REMOVE: "\0ERR - REINSERT\n\rOR CONFIRM",
-            event.CARD_INSERT: "\0ERR - REMOVE CARD(S)",
+            shop_user.DEFAULT_NAME: "\0ERR - LACK\n\r PERMISSIONS",
+            event.CARD_SWIPE:  "\0ERR - IGNORING\n\r SWIPE, CONFIRM",
+            event.CARD_REMOVE: "\0ERR -REINSRT OR\n\rCNFRM, SLOT: ",
+            event.CARD_INSERT: "\0ERR - UNINSERT\n\rSLOT:",
+            event.SWITCH_FLIP_OFF: "\0ERR - TURN\n\rSHOP BACK ON"
             }
 
         self._no_confirm_state_error_combos = [
             (fsm.CLOSED, shop_check_in_exceptions.ShopUserError),
             (fsm.CLOSED, shop_check_in_exceptions.NonexistentUserError),
+            (fsm.CLOSED, shop_check_in_exceptions.NonProctorError),
             (fsm.STANDBY, shop_check_in_exceptions.UnauthorizedUserError)
         ]
 
@@ -58,6 +60,9 @@ class ErrorHandler(object):
             },
             shop_check_in_exceptions.ShopOccupiedError: {
                 event.SWITCH_FLIP_ON: self._handle_shop_open
+            },
+            event.SWITCH_FLIP_OFF: {
+                event.SWITCH_FLIP_ON: self._handle_shop_open
             }
 
         }
@@ -65,7 +70,6 @@ class ErrorHandler(object):
     def _requires_no_confirmation(self, state, error):
         for (no_confirm_state, no_confirm_error) in self._no_confirm_state_error_combos:
             if state == no_confirm_state and self._same_error(error, no_confirm_error):
-                print "The error %s from state %s requires no confirmation" % (str(error), str(state))
                 return True
         return False
 
@@ -74,7 +78,7 @@ class ErrorHandler(object):
         """
         Determines if e is an instance of error class template_e OR if e equals template_e
         """
-        print "Same error:", str(e), str(template_e)
+
         try:
             return isinstance(e, template_e)
         except TypeError:
@@ -83,11 +87,9 @@ class ErrorHandler(object):
     def handle_error(self, return_state, error, error_data=None):
         # winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
 
-        self._store_error_frame(return_state, error, error_data)
-
         while True:
 
-            self._report_error()
+            self._report_error(error, error_data)
 
             if self._requires_no_confirmation(return_state, error):
                 return return_state
@@ -105,15 +107,15 @@ class ErrorHandler(object):
             if result == ERROR_RESOLVED:
                 return return_state
 
-    def _store_error_frame(self, return_state, error, error_data):
-        self._return_state = return_state
-        self._error = error
-        self._error_data = error_data
+    def _report_error(self, error, error_data):
+        print 'going to report', error
+        error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
+        error_msg += str(error_data) if error_data else ""
+        print 'with msg', error_msg
+        self._send_message_format_safe(error_msg)
 
-    def _report_error(self):
-        error_msg = self._messages_to_display.get(self._error, DEFAULT_ERROR_MESSAGE)
-        error_msg += str(self._error_data) if self._error_data else ""
-        self._message_q.put(error_msg)
+    def _send_message_format_safe(self, msg):
+        self._message_q.put(io_moderator.safe_format_msg(msg))
 
     def _get_action(self, error, next_event):
         try:
@@ -142,8 +144,8 @@ class ErrorHandler(object):
 
     def _handle_card_removed_not_reinserted(self, unused_data=None, old_slot=None):
         assert old_slot is not None
-        self._message_q.put("User %s, left the shop!" %
-                            (str(self._shop.get_user_s_name_and_email(old_slot))))
+        name = "".join(self._shop.get_user_s_name(old_slot))[:14]
+        self._send_message_format_safe("\0%s\n\rleft the shop!" % name)
         users = self._shop.get_user_s(old_slot)
         self._mailer._send_id_card_email_s(users)
         self._shop.discharge_user_s(old_slot)
@@ -165,3 +167,4 @@ class ErrorHandler(object):
 
     def _handle_shop_open(self, unused_date=None, unused_error_data=None):
         return ERROR_RESOLVED
+

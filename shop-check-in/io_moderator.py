@@ -5,7 +5,7 @@ import serial
 
 import event
 
-COM_PORT = 'COM5'
+COM_PORT = 'COM3'
 BAUD_RATE = 115200
 TIMEOUT_SECONDS = 0.05
 
@@ -46,6 +46,21 @@ class IoModerator(threading.Thread):
         if event_key == event.CARD_INSERT or event_key == event.CARD_REMOVE:
             event_data = int(event_data)
         return event.Event(event_key, event_data)
+
+
+def safe_format_msg(msg):
+    # Split into lines
+    lines = msg.split('\n\r')
+    # Make sure first line has null byte
+    if lines[0][0:1] != '\0':
+        lines[0] = '\0' + lines[0]
+    # Truncate Lines
+    lines = [line[:16] for line in lines]
+    # Re combine
+    safe_msg = '\n\r'.join(lines)
+    if safe_msg != msg:
+        print "Bad format, msg: %s" % msg
+    return safe_msg
 
 
 def main():
