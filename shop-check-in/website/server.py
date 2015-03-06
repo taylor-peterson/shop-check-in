@@ -79,4 +79,5 @@ class LiveSite(object):
                 self._shop_status[sub_shop]['limbo'] += user_s_names
 
     def start(self):
-        self._server.run(port=80)
+        self._server.run(host='0.0.0.0',
+                         port=80)
