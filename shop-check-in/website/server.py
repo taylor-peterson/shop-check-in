@@ -78,5 +78,5 @@ class LiveSite(object):
                 user_s_names = [user.name for user in self._shop.current_machine_user_s(slot)]
                 self._shop_status[sub_shop]['limbo'] += user_s_names
 
-    def start_server(self):
+    def start(self):
         self._server.run(port=80)
