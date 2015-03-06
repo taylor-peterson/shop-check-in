@@ -8,10 +8,10 @@ _LATHE_1 = 2
 _LATHE_2 = 1
 _LATHE_3 = 31
 _LATHE_4 = 30
-# _WOOD_LATHE_1 = 8
-# _WOOD_LATHE_2 = 9
-# _WOOD_LATHE_3 = 10
-# _CNC_LATHE = 11
+_WOOD_LATHE_1 = 8
+_WOOD_LATHE_2 = 9
+_WOOD_LATHE_3 = 10
+_CNC_LATHE = 11
 _SPECIFIC_MACHINE_TO_SLOT_MAP = { 'Mill 1': _MILL_1,
                         'Mill 2': _MILL_2,
                         'Mill 3': _MILL_3,
