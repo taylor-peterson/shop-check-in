@@ -6,7 +6,6 @@ import winsound
 
 import error_handler
 import event
-import id_logger
 import shop
 import shop_user
 import shop_user_database
@@ -281,24 +280,3 @@ class BoardFsm(object):
         thread_play_noise = threading.Thread(target=winsound.PlaySound, args=(noise, winsound.SND_FILENAME))
         thread_play_noise.daemon = True
         thread_play_noise.start()
-
-
-def main():
-    event_q = queue.Queue()
-    message_q = queue.Queue()
-
-    shop_user_db = shop_user_database.ShopUserDatabaseTesting()
-
-    thread_id_logger = id_logger.IdLogger(event_q)
-    thread_id_logger.daemon = True
-    thread_id_logger.start()
-
-    thread_io_moderator = io_moderator.IoModerator(event_q, message_q)
-    thread_io_moderator.daemon = True
-    thread_io_moderator.start()
-
-    board = BoardFsm(event_q, message_q, shop_user_db)
-    board.run_fsm()
-
-if __name__ == "__main__":
-    main()
