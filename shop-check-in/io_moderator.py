@@ -5,7 +5,7 @@ import serial
 
 import event
 
-COM_PORT = 'COM3'
+COM_PORT = 'COM4'
 import logger.all_events as event_logger
 
 BAUD_RATE = 115200
