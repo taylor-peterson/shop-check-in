@@ -70,7 +70,7 @@ class ShopUserDatabase(object):
         else:
             try:
                 self._shop_user_database_google_worksheet.test_connection()
-            except IOError:
+            except (IOError, Exception):
                 self._shop_user_database_google_worksheet = None
                 self._connect_to_google_spreadsheet()
 

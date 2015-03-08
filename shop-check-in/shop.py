@@ -48,7 +48,7 @@ class Shop(object):
         prev_slot = int(prev_slot)
 
         if slot != prev_slot:
-            self.log_exit(slot)
+            self.log_exit(prev_slot)
             self._occupants[slot] = self._occupants[prev_slot]
             self._start_times[slot] = NO_TIME
             self._occupants[prev_slot] = []

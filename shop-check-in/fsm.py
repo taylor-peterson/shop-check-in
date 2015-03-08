@@ -88,7 +88,7 @@ class BoardFsm(object):
                            {event.CARD_INSERT: self._adding_user_s_process_slot,
                             event.BUTTON_CANCEL: self._go_to_standby_state}),
 
-            REMOVING_USER: ("\0REMOVING USER(S)\n\r(R)NSRT/CLR/CHRG",
+            REMOVING_USER: ("\0REMOVING USER_S\n\r(R)NSRT/CLR/CHRG",
                             {event.CARD_INSERT: self._removing_user_process_slot,
                              event.BUTTON_DISCHARGE_USER: self._removing_user_process_discharge,
                              event.BUTTON_MONEY: self._removing_user_process_charge}),
