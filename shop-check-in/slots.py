@@ -11,19 +11,19 @@ _LATHE_4 = 30
 _WOOD_LATHE_1 = 8
 _WOOD_LATHE_2 = 9
 _WOOD_LATHE_3 = 10
-_CNC_LATHE = 11
+_CNC_LATHE = 15
 _SPECIFIC_MACHINE_TO_SLOT_MAP = { 'Mill 1': _MILL_1,
                         'Mill 2': _MILL_2,
                         'Mill 3': _MILL_3,
                         'Lathe 1': _LATHE_1,
                         'Lathe 2': _LATHE_2,
                         'Lathe 3': _LATHE_3,
-                        'Lathe 4': _LATHE_4}
-                        # 'Wood Lathe 1': _WOOD_LATHE_1,
-                        # 'Wood Lathe 2': _WOOD_LATHE_2,
-                        # 'Wood Lathe 3': _WOOD_LATHE_3,
-                        # 'CNC Lathe': _CNC_LATHE
-                        # }
+                        'Lathe 4': _LATHE_4,
+                        'Wood Lathe 1': _WOOD_LATHE_1,
+                        'Wood Lathe 2': _WOOD_LATHE_2,
+                        'Wood Lathe 3': _WOOD_LATHE_3,
+                        'CNC Lathe': _CNC_LATHE
+                        }
 
 # [Configurable] Lists of slots for each shop
 _MAIN_SHOP_SLOTS = [1, 2, 3, 4, 5, 27, 28, 29, 30, 31]
