@@ -128,6 +128,9 @@ class _ShopUserDatabaseGoogleWorksheet(object):
     def load_shop_user_database(self):
         raw_data = self._worksheet.get_all_values()
         shop_users = [shop_user.ShopUser(shop_user_data) for shop_user_data in raw_data]
+        for user in shop_users:
+            if user.validation_required_changes():
+                self.update_user(user)
         shop_user_database = {user.id_number: user for user in shop_users}
         return shop_user_database
 
@@ -140,6 +143,7 @@ class _ShopUserDatabaseGoogleWorksheet(object):
 
     def update_user(self, user):
         self._change_debt(user.id_number, user.debt)
+        self._update_proctorliness(user)
 
     def _get_login_info(self):
         with open(PATH_LOGIN_INFO, "r") as login_info:
@@ -149,6 +153,12 @@ class _ShopUserDatabaseGoogleWorksheet(object):
         row = self._worksheet.find(id_number).row
         col = shop_user.DEBT + 1  # gspread is 1-indexed, shop_users are 0-indexed.
         self._worksheet.update_cell(row, col, new_debt)
+
+    def _update_proctorliness(self, user):
+        row = self._worksheet.find(user.id_number).row
+        col = shop_user.PROCTOR + 1  # gspread is 1-indexed, shop_users are 0-indexed.
+        proctorliness = shop_user.IS_PROCTOR if user._proctor else shop_user.IS_NOT_PROCTOR
+        self._worksheet.update_cell(row, col, proctorliness)
 
 
 class _ShopUserDatabaseLocal(object):

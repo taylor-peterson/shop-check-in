@@ -37,6 +37,7 @@ class ShopUser(object):
                             DEFAULT_ID_NUMBER,
                             DEFAULT_DEBT,
                             DEFAULT_PROCTORLINESS),):
+        self._validation_required_changes = False
         self.validated_user_data = self._validate_user_data(user_data)
 
         self.id_number = self.validated_user_data[ID]
@@ -61,6 +62,12 @@ class ShopUser(object):
             raise shop_check_in_exceptions.NonProctorError
         return self.is_shop_certified()
 
+    def validation_required_changes(self):
+        if self._validation_required_changes:
+            self._validation_required_changes = False
+            return True
+        return False
+
     def _has_valid_safety_test(self):
         today = datetime.date.today()
         difference_in_years = relativedelta(today, self._test_date).years
@@ -74,8 +81,18 @@ class ShopUser(object):
 
         try:
             validated_user_data[TEST_DATE] = dateutil.parser.parse(user_data[TEST_DATE])
-            validated_user_data[DEBT] = int(float(user_data[DEBT]))
-            validated_user_data[PROCTOR] = user_data[PROCTOR] == IS_PROCTOR
+            if user_data[DEBT] == "":
+                validated_user_data[DEBT] = 0
+                self._validation_required_changes = True
+            else:
+                validated_user_data[DEBT] = int(float(user_data[DEBT]))
+            if user_data[PROCTOR] == IS_PROCTOR:
+                validated_user_data[PROCTOR] = True
+            elif user_data[PROCTOR] == IS_NOT_PROCTOR:
+                validated_user_data[PROCTOR] = False
+            else:
+                self._validation_required_changes = True
+                validated_user_data[PROCTOR] = False
             validated_user_data[ID] = user_data[ID].lstrip('0')[:8]
         except ValueError:
             exc_traceback = sys.exc_traceback
