@@ -4,7 +4,7 @@ import shop_user
 import datetime
 import time
 import slots
-
+import threading
 
 """
 Status dictionary format
@@ -31,6 +31,7 @@ class LiveSite(object):
         self._server.config.from_pyfile('web.cfg')
         self._shop = shop
         self._shop_status = {}
+        self.daemon = False
 
         @self._server.route('/')
         def basic():
@@ -79,5 +80,12 @@ class LiveSite(object):
                 self._shop_status[sub_shop]['limbo'] += user_s_names
 
     def start(self):
+        if self.daemon:
+            daemon = threading.Thread(target=self._start)
+            daemon.start()
+        else:
+            self._start()
+
+    def _start(self):
         self._server.run(host='0.0.0.0',
                          port=80)

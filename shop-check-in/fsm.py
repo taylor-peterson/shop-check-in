@@ -11,7 +11,6 @@ import shop_user
 import shop_user_database
 import io_moderator
 import shop_check_in_exceptions
-import website.server
 import logger.all_events as event_logger
 
 MESSAGE = 0
@@ -54,7 +53,6 @@ class BoardFsm(object):
     def __init__(self, event_q, message_q, shop_user_db):
         self._state = CLOSED
         self._shop = shop.Shop()
-        self._server = website.server.LiveSite(self._shop)
         self._shop_user_database = shop_user_db
         self._event_q = event_q
         self._message_q = message_q
@@ -104,9 +102,6 @@ class BoardFsm(object):
 
     def run_fsm(self):
 
-        daemon = threading.Thread(target=self.start_server)
-        daemon.start()
-
         cargo = None
         
         while True:
@@ -126,8 +121,6 @@ class BoardFsm(object):
             except KeyError:
                 self._state = self._error_handler.handle_error(self._state, next_event.key, next_event.data)
 
-    def start_server(self):
-        self._server.start()
 
     def _send_message_format_safe(self, msg):
         self._message_q.put(io_moderator.safe_format_msg(msg))
