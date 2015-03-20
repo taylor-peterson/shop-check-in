@@ -18,11 +18,11 @@ _SPECIFIC_MACHINE_TO_SLOT_MAP = { 'Mill 1': _MILL_1,
                         'Lathe 1': _LATHE_1,
                         'Lathe 2': _LATHE_2,
                         'Lathe 3': _LATHE_3,
-                        'Lathe 4': _LATHE_4,
-                        'Wood Lathe 1': _WOOD_LATHE_1,
-                        'Wood Lathe 2': _WOOD_LATHE_2,
-                        'Wood Lathe 3': _WOOD_LATHE_3,
-                        'CNC Lathe': _CNC_LATHE
+                        'Lathe 4': _LATHE_4
+                        # 'Wood Lathe 1': _WOOD_LATHE_1,
+                        # 'Wood Lathe 2': _WOOD_LATHE_2,
+                        # 'Wood Lathe 3': _WOOD_LATHE_3,
+                        # 'CNC Lathe': _CNC_LATHE
                         }
 
 # [Configurable] Lists of slots for each shop

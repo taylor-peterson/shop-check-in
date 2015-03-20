@@ -62,6 +62,7 @@
             </div>
             <div class="col-md-4">
                 <h3>Wood Shop</h3>
+                {% if status.wood.machines %}
                 <table class="table">
                     <thead><tr>
                         <th>Machine</th>
@@ -77,7 +78,12 @@
                         </tr>
                     {% endfor %}
                 </table>
-                <p>Other Occupants:</p>
+                {% endif %}
+                <p>
+                    {% if status.wood.machines %}
+                    Other
+                    {% endif %}
+                    Occupants:</p>
                 <ul class="list-group">
                     {% for user in status.wood.limbo %}
                     <li class="list-group-item">{{ user }}</li>
@@ -86,6 +92,7 @@
             </div>
             <div class="col-md-4">
                 <h3>Sheet Metal Shop</h3>
+                {% if status.sheet.machines %}
                 <table class="table">
                     <thead><tr>
                         <th>Machine</th>
@@ -101,7 +108,12 @@
                         </tr>
                     {% endfor %}
                 </table>
-                <p>Other Occupants:</p>
+                {% endif %}
+                <p>
+                    {% if status.sheet.machines %}
+                    Other
+                    {% endif %}
+                    Occupants:</p>
                 <ul class="list-group">
                     {% for user in status.sheet.limbo %}
                     <li class="list-group-item">{{ user }}</li>
