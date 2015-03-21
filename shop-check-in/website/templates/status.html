@@ -4,9 +4,10 @@
     <title>
         HMC Machine Shop
     </title>
-    <link type="text/css" href="static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
     <link type="text/css" href="static/css/status.css" rel="stylesheet">
     <link type="img/vnd.microsoft.ico" href="static/img/favicon.ico" rel="icon">
+    <meta http-equiv="refresh" content="60">
 </head>
 <body>
 <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -38,6 +39,7 @@
         <div class="row">
             <div class="col-md-4">
                 <h3>Main Shop</h3>
+                {% if status.main.machines %}
                 <table class="table">
                     <thead><tr>
                         <th>Machine</th>
@@ -53,7 +55,8 @@
                         </tr>
                     {% endfor %}
                 </table>
-                <p>Other Occupants:</p>
+                {% endif %}
+                <p>{{ 'Other' if status.main.machines else '' }} Occupants:</p>
                 <ul class="list-group">
                     {% for user in status.main.limbo %}
                     <li class="list-group-item">{{ user }}</li>
@@ -79,11 +82,7 @@
                     {% endfor %}
                 </table>
                 {% endif %}
-                <p>
-                    {% if status.wood.machines %}
-                    Other
-                    {% endif %}
-                    Occupants:</p>
+                <p>{{ 'Other' if status.wood.machines else '' }} Occupants:</p>
                 <ul class="list-group">
                     {% for user in status.wood.limbo %}
                     <li class="list-group-item">{{ user }}</li>
@@ -109,11 +108,7 @@
                     {% endfor %}
                 </table>
                 {% endif %}
-                <p>
-                    {% if status.sheet.machines %}
-                    Other
-                    {% endif %}
-                    Occupants:</p>
+                <p>{{ 'Other' if status.sheet.machines else '' }} Occupants:</p>
                 <ul class="list-group">
                     {% for user in status.sheet.limbo %}
                     <li class="list-group-item">{{ user }}</li>
@@ -133,6 +128,6 @@
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-<script src="./static/bootstrap/js/bootstrap.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 </body>
 </html>

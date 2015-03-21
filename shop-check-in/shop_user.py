@@ -17,7 +17,7 @@ DEFAULT_NAME = "nonexistent_user"
 INVALID_TEST_DATE = "1970-03-22"
 IGNORED_DATA = "ignored_data"
 DEFAULT_EMAIL = "nope"
-DEFAULT_ID_NUMBER = "0000000"
+DEFAULT_ID_NUMBER = "12345678"
 DEFAULT_DEBT = 0
 DEFAULT_PROCTORLINESS = False
 
@@ -103,8 +103,8 @@ class ShopUser(object):
     def __eq__(self, other):
         if (self.__class__ == other.__class__ and
                 self.id_number == other.id_number and
-                self.name == other._name and
-                self.email == other._email and
+                self.name == other.name and
+                self.email == other.email and
                 self._test_date == other._test_date and
                 self.debt == other.debt and
                 self._proctor == other._proctor):

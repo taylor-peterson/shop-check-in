@@ -222,7 +222,7 @@ class TestFsmStateTransitions:
 
         print "\n"
         end_state = board.run_fsm()
-        assert end_state == fsm.ADDING_USER
+        assert end_state == fsm.UNLOCKED
         print
 
     def test_unlock_swipe_invalid(self):
@@ -235,7 +235,6 @@ class TestFsmStateTransitions:
         event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
         event_q.put(CARD_SWIPE_INVALID)
-        event_q.put(BUTTON_CONFIRM)
         event_q.put(TERMINATE_PROGRAM)
 
         print "\n"
@@ -329,6 +328,24 @@ class TestFsmStateTransitions:
         assert end_state == fsm.STANDBY
         print
 
+    def test_unlock_try_add_pod_to_machine(self):
+        event_q = queue.Queue()
+        message_q = queue.Queue()
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+        board = fsm.BoardFsm(event_q, message_q, shop_user_db)
+
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(TERMINATE_PROGRAM)
+
+        print "\n"
+        end_state = board.run_fsm()
+        assert end_state == fsm.UNLOCKED
+        print
+
+
     def test_unlock_add_user(self):
         event_q = queue.Queue()
         message_q = queue.Queue()
@@ -338,7 +355,7 @@ class TestFsmStateTransitions:
         event_q.put(CARD_SWIPE_POD)
         event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
         event_q.put(CARD_INSERT)
         event_q.put(TERMINATE_PROGRAM)
 
@@ -356,13 +373,49 @@ class TestFsmStateTransitions:
         event_q.put(CARD_SWIPE_POD)
         event_q.put(SWITCH_FLIP_ON)
         event_q.put(CARD_SWIPE_POD)
-        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_PROCTOR)
         event_q.put(CARD_SWIPE_CERTIFIED)
         event_q.put(TERMINATE_PROGRAM)
 
         print "\n"
         end_state = board.run_fsm()
         assert end_state == fsm.ADDING_USERS
+        print
+
+    def test_unlock_add_user_try_re_add_same_user(self):
+        event_q = queue.Queue()
+        message_q = queue.Queue()
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+        board = fsm.BoardFsm(event_q, message_q, shop_user_db)
+
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(TERMINATE_PROGRAM)
+
+        print "\n"
+        end_state = board.run_fsm()
+        assert end_state == fsm.ADDING_USER
+        print
+
+    def test_unlock_add_user_try_add_pod(self):
+        event_q = queue.Queue()
+        message_q = queue.Queue()
+        shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+        board = fsm.BoardFsm(event_q, message_q, shop_user_db)
+
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(SWITCH_FLIP_ON)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(CARD_SWIPE_CERTIFIED)
+        event_q.put(CARD_SWIPE_POD)
+        event_q.put(TERMINATE_PROGRAM)
+
+        print "\n"
+        end_state = board.run_fsm()
+        assert end_state == fsm.ADDING_USER
         print
 
     def test_unlock_add_users_insert(self):

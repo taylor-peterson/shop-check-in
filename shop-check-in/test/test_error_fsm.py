@@ -35,7 +35,7 @@ class ErrorHandlerHarness:
         exit_state = self.handle_error(error, error_data)
         assert exit_state == self._start_state
 
-    @timeout.make_timeout(5)
+    @timeout.make_timeout(2)
     def handle_error(self, error, error_data=None):
         return self._handler.handle_error(self._start_state, error, error_data)
 
@@ -44,116 +44,6 @@ class ErrorHandlerHarness:
 
     def no_more_events(self):
         return self._event_q.empty()
-
-
-class TestErrorHandlerTransitions:
-    def test_non_proctor_error_confirm(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events(shop_check_in_exceptions.NonProctorError(),
-                            None,
-                            [BUTTON_CONFIRM])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_non_proctor_error_insert(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events(shop_check_in_exceptions.NonProctorError(),
-                            None,
-                            [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_insert_insert_fix_fix(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events(CARD_INSERT.key,
-                            CARD_INSERT.data,
-                            [CARD_INSERT_OTHER, CARD_REMOVE_OTHER, CARD_REMOVE])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_insert_remove_other_fix_fix(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events(CARD_INSERT.key,
-                            CARD_INSERT.data,
-                            [CARD_REMOVE_OTHER, CARD_INSERT_OTHER, CARD_REMOVE])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_remove_insert_other_fix_fix(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events(CARD_REMOVE.key,
-                            CARD_REMOVE.data,
-                            [CARD_INSERT_OTHER, CARD_REMOVE_OTHER, CARD_INSERT])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_remove_remove_fix_fix(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events(CARD_REMOVE.key,
-                            CARD_REMOVE.data,
-                            [CARD_REMOVE_OTHER, CARD_INSERT_OTHER, CARD_INSERT])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_no_confirm_closed_nonproctor(self):
-        print
-        harness = ErrorHandlerHarness()
-        harness.set_initial_state(fsm.CLOSED)
-
-        harness.test_events(shop_check_in_exceptions.NonProctorError(),
-                            None,
-            [])
-
-        assert harness.has_messages()
-        assert harness.no_more_events()
-        print
-
-    def test_default_insert_remove_confirm(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.test_events("default error",
-                            None,
-                            [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM, CARD_SWIPE_PROCTOR])
-
-        assert harness.has_messages()
-        assert not harness.no_more_events()
-        print
-
-    def test_timeout_on_unresolved_error(self):
-        print
-        harness = ErrorHandlerHarness()
-
-        harness.add_event(BUTTON_CANCEL)
-        harness.add_event(BUTTON_CHANGE_POD)
-        harness.add_event(BUTTON_DISCHARGE_USER)
-
-        assert timeout.is_timeout(harness.handle_error("Default Error"))
-        print
 
 
 class ErrorAndFSMHarness:
@@ -190,6 +80,7 @@ class ErrorAndFSMHarness:
 
 
 class TestErrorFSMIntegration:
+
     def test_nonproctor_open_then_open(self):
         print
         harness = ErrorAndFSMHarness()
@@ -237,13 +128,9 @@ class TestErrorFSMIntegration:
              SWITCH_FLIP_ON,
              CARD_SWIPE_PROCTOR,
              CARD_SWIPE_INVALID,
-             BUTTON_CONFIRM,
              CARD_SWIPE_CERTIFIED,
              CARD_SWIPE_PROCTOR,
-             BUTTON_CANCEL,
              CARD_INSERT,
-             BUTTON_CONFIRM,
-             CARD_REMOVE,
              TERMINATE_PROGRAM],
             fsm.STANDBY
         )
@@ -257,4 +144,144 @@ class TestErrorFSMIntegration:
         print
         harness = ErrorHandlerHarness()
         harness._handler._mailer._send_id_card_email_s([sample_users.USER_CERTIFIED])
+        print
+
+    def test_non_proctor_error_confirm(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_CERTIFIED,
+             TERMINATE_PROGRAM],
+            fsm.CLOSED
+        )
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_insert_insert_fix_fix(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_POD,
+             SWITCH_FLIP_ON,
+             CARD_INSERT,
+             CARD_INSERT_OTHER,
+             CARD_REMOVE_OTHER,
+             CARD_REMOVE,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_insert_remove_other_fix_fix(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_POD,
+             SWITCH_FLIP_ON,
+             CARD_SWIPE_POD,
+             CARD_SWIPE_CERTIFIED,
+             CARD_INSERT_OTHER,
+             CARD_INSERT,
+             CARD_REMOVE_OTHER,
+             CARD_INSERT_OTHER,
+             CARD_REMOVE,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_remove_insert_other_fix_fix(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_POD,
+             SWITCH_FLIP_ON,
+             CARD_SWIPE_POD,
+             CARD_SWIPE_CERTIFIED,
+             CARD_INSERT_OTHER,
+             CARD_REMOVE_OTHER,
+             CARD_INSERT,
+             CARD_REMOVE,
+             CARD_INSERT_OTHER,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_remove_remove_fix_fix(self):
+        print
+        harness = ErrorAndFSMHarness()
+
+        harness.test_events_expect_state(
+            [CARD_SWIPE_POD,
+             SWITCH_FLIP_ON,
+             CARD_SWIPE_POD,
+             CARD_SWIPE_CERTIFIED,
+             CARD_INSERT_OTHER,
+             CARD_SWIPE_POD,
+             CARD_SWIPE_PROCTOR,
+             CARD_INSERT,
+             CARD_REMOVE_OTHER,
+             CARD_REMOVE,
+             CARD_INSERT,
+             CARD_INSERT_OTHER,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_no_confirm_closed_nonproctor(self):
+        print
+        harness = ErrorHandlerHarness()
+        harness.set_initial_state(fsm.CLOSED)
+
+        harness.test_events(shop_check_in_exceptions.NonProctorError(),
+                            None,
+            [])
+
+        assert harness.has_messages()
+        assert harness.no_more_events()
+        print
+
+    def test_default_insert_remove_confirm(self):
+        print
+        harness = ErrorHandlerHarness()
+
+        harness.test_events("default error",
+                            None,
+                            [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM, CARD_SWIPE_PROCTOR])
+
+        assert harness.has_messages()
+        assert not harness.no_more_events()
+        print
+
+    def test_timeout_on_unresolved_error(self):
+        print
+        harness = ErrorHandlerHarness()
+
+        harness.add_event(BUTTON_CANCEL)
+        harness.add_event(BUTTON_CHANGE_POD)
+        harness.add_event(BUTTON_DISCHARGE_USER)
+
+        assert timeout.is_timeout(harness.handle_error("Default Error"))
         print

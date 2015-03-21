@@ -4,12 +4,6 @@ import shop_user
 from shop_user_database import PATH_LOGIN_INFO
 
 EMAIL_TEMPLATE = """From: From Person <%s>
-;0401624136?
-;0503204771?
-;0401624136?
-;0401624136?
-;0401624136?
-;0503204771?
 To: To Person <%s>
 MIME-Version: 1.0
 Content-type: text/html

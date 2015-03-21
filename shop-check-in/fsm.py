@@ -193,6 +193,9 @@ class BoardFsm(object):
             self._play_noise(NOISE_ERROR)
             return self._error_handler.handle_error(self._state, error), ignored_cargo
         else:
+            if self._shop.is_pod(user):
+                return self._error_handler.handle_error(self._state,
+                                                        shop_check_in_exceptions.PodCannotWorkError), ignored_cargo
             self._play_noise(NOISE_SUCCESS)
             return ADDING_USER, [user]
 
@@ -217,6 +220,12 @@ class BoardFsm(object):
             self._play_noise(NOISE_ERROR)
             return self._error_handler.handle_error(self._state, error), first_user
         else:
+            if self._shop.is_pod(second_user):
+                return self._error_handler.handle_error(self._state,
+                                                        shop_check_in_exceptions.PodCannotWorkError), first_user
+            if first_user[0] == second_user:
+                return self._error_handler.handle_error(self._state,
+                                                        shop_check_in_exceptions.UserAlreadySwipedError), first_user
             self._play_noise(NOISE_SUCCESS)
             return ADDING_USERS, first_user + [second_user]
 

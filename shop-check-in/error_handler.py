@@ -31,6 +31,8 @@ class ErrorHandler(object):
             shop_check_in_exceptions.OutOfDateTestError: "\0ERR - EXPIRED\n\rSAFETY TEST",
             shop_check_in_exceptions.ShopAlreadyOpenError: "\0ERR SHOP\n\rALREADY OPEN",
             shop_check_in_exceptions.PodRequiredError: "\0ERR - ONLY POD\n\rCANNOT SIGN OUT",
+            shop_check_in_exceptions.PodCannotWorkError: "\0ERR - POD CAN\n\rNOT WORK",
+            shop_check_in_exceptions.UserAlreadySwipedError: "\0ERR - USER\n\rALREADY SWIPED",
             shop_user.DEFAULT_NAME: "\0ERR - LACK\n\r PERMISSIONS",
             event.CARD_SWIPE:  "\0ERR - IGNORING\n\r SWIPE, CONFIRM",
             event.CARD_REMOVE: "\0ERR -REINSRT OR\n\rCNFRM, SLOT: ",
@@ -48,10 +50,13 @@ class ErrorHandler(object):
                  shop_check_in_exceptions.NonexistentUserError),
             fsm.UNLOCKED:
                 (shop_check_in_exceptions.ShopUserError,
-                shop_check_in_exceptions.NonexistentUserError),
+                shop_check_in_exceptions.NonexistentUserError,
+                shop_check_in_exceptions.PodCannotWorkError),
             fsm.ADDING_USER:
                 (shop_check_in_exceptions.ShopUserError,
-                shop_check_in_exceptions.NonexistentUserError)
+                shop_check_in_exceptions.NonexistentUserError,
+                shop_check_in_exceptions.PodCannotWorkError,
+                shop_check_in_exceptions.UserAlreadySwipedError)
         }
 
         self._not_actual_error_combos = {
@@ -153,8 +158,10 @@ class ErrorHandler(object):
             self._report_error(error, error_data)
 
             if self._requires_no_confirmation(return_state, error):
-                time.sleep(NO_CONFIRM_DELAY)
+                print "No confirm: %s %s" % (return_state, error)
+                # time.sleep(NO_CONFIRM_DELAY)
                 return return_state
+            print "Confirm: %s %s" % (return_state, error)
 
             next_event = self._event_q.get()
             if next_event.key == event.TERMINATE_PROGRAM:
@@ -185,9 +192,11 @@ class ErrorHandler(object):
     def _get_action(self, error, next_event):
         try:
             action = self._error_specific_event_to_action_map[error][next_event.key]
+            print "Found specific action: %s -> %s" %(error, action)
         except KeyError:
             try:
                 action = self._default_event_to_action_map[next_event.key]
+                print "Found default action: %s -> %s" %(error, action)
             except KeyError:
                 action = self._handle_unrecognized_event
 

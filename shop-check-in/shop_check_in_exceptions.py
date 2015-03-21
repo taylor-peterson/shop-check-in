@@ -49,8 +49,10 @@ class OutOfDateTestError(ShopUserError):
 class NonProctorError(ShopUserError):
     pass
 
+
 class NonPodError(ShopUserError):
     pass
+
 
 # endregion
 
@@ -70,3 +72,17 @@ class CannotAccessGoogleSpreadsheetsError(ShopUserDatabaseError):
 
 # endregion
 
+# region FSM Errors
+
+class FSMError(ShopCheckInError):
+    pass
+
+
+class PodCannotWorkError(FSMError):
+    pass
+
+
+class UserAlreadySwipedError(FSMError):
+    pass
+
+# endregion
