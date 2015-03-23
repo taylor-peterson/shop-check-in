@@ -159,7 +159,7 @@ class ErrorHandler(object):
 
             if self._requires_no_confirmation(return_state, error):
                 print "No confirm: %s %s" % (return_state, error)
-                # time.sleep(NO_CONFIRM_DELAY)
+                time.sleep(NO_CONFIRM_DELAY)
                 return return_state
             print "Confirm: %s %s" % (return_state, error)
 
