@@ -56,7 +56,7 @@ class BoardFsm(object):
         self._shop_user_database = shop_user_db
         self._event_q = event_q
         self._message_q = message_q
-        self._error_handler = error_handler.ErrorHandler(event_q, message_q,  self._shop)
+        self._error_handler = error_handler.ErrorHandler(event_q, message_q, self._shop, shop_user_db)
 
         self._state_data = {
             CLOSED: ("\0SHOP CLOSED.\n\rPROCTOR SWIPE",

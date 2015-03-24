@@ -265,14 +265,24 @@ class TestErrorFSMIntegration:
 
     def test_default_insert_remove_confirm(self):
         print
-        harness = ErrorHandlerHarness()
+        harness = ErrorAndFSMHarness()
 
-        harness.test_events("default error",
-                            None,
-                            [CARD_INSERT, CARD_REMOVE, BUTTON_CONFIRM, CARD_SWIPE_PROCTOR])
+        harness.test_events_expect_state(
+            [CARD_SWIPE_POD,
+             SWITCH_FLIP_ON,
+             CARD_SWIPE_POD,
+             CARD_SWIPE_CERTIFIED,
+             CARD_INSERT_OTHER,
+             CARD_REMOVE_OTHER,
+             CARD_SWIPE_CERTIFIED,
+             CARD_SWIPE_POD,
+             TERMINATE_PROGRAM],
+            fsm.STANDBY
+        )
+
 
         assert harness.has_messages()
-        assert not harness.no_more_events()
+        assert harness.no_more_events()
         print
 
     def test_timeout_on_unresolved_error(self):
