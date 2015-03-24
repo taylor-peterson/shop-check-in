@@ -1,6 +1,7 @@
 import shop
 import fsm
 import shop_user
+import shop_user_database
 import shop_check_in_exceptions
 import event
 import io_moderator
@@ -14,13 +15,14 @@ ERROR_NOT_RESOLVED = "error_not_resolved"
 NO_CONFIRM_DELAY = 1.5 # Second
 
 class ErrorHandler(object):
-    def __init__(self, event_q, message_q, shop_):
+    def __init__(self, event_q, message_q, shop_, shop_user_db):
         self._event_q = event_q
         self._message_q = message_q
         self._shop = shop_
+        self._shop_user_db = shop_user_db
         self._mailer = Mailer()
 
-        # TODO: Right now errors are sometimes passed in as events, sometimes errors. Homogenize.
+        # Messages can have 15 characters on the first line, 16 on the second
         self._messages_to_display = {
             shop_check_in_exceptions.NonexistentUserError: "\0NONEXISTENT\n\rUSER",
             shop_check_in_exceptions.InvalidUserError: "\0ERR - INVALID\n\rUSER - CONFIRM",
@@ -35,8 +37,8 @@ class ErrorHandler(object):
             shop_check_in_exceptions.UserAlreadySwipedError: "\0ERR - USER\n\rALREADY SWIPED",
             shop_user.DEFAULT_NAME: "\0ERR - LACK\n\r PERMISSIONS",
             event.CARD_SWIPE:  "\0ERR - IGNORING\n\r SWIPE, CONFIRM",
-            event.CARD_REMOVE: "\0ERR -REINSRT OR\n\rCNFRM, SLOT: ",
-            event.CARD_INSERT: "\0ERR - UNINSERT\n\rSLOT:",
+            event.CARD_REMOVE: "\0ERR- RENSRT/POD\n\rSWIPE, SLOT: ",
+            event.CARD_INSERT: "\0ERR - UNINSERT\n\rSLOT: ",
             event.SWITCH_FLIP_OFF: "\0ERR - TURN\n\rSHOP BACK ON",
             event.SWITCH_FLIP_ON: "\0ERR - FLIP\n\rSWITCH DOWN"
             }
@@ -88,7 +90,7 @@ class ErrorHandler(object):
         self._error_specific_event_to_action_map = {
             event.CARD_REMOVE: {
                 event.CARD_INSERT: self._handle_card_reinsert,
-                event.BUTTON_CONFIRM: self._handle_card_removed_not_reinserted
+                event.CARD_SWIPE: self._handle_card_removed_not_reinserted
             },
             event.CARD_INSERT: {
                 event.CARD_REMOVE: self._handle_card_uninsert,
@@ -148,7 +150,7 @@ class ErrorHandler(object):
         if isinstance(error, Exception):
             error = error.__class__
 
-        print "Error handler, <State: %s, Error: %s, Data: %s>" % (return_state, error, error_data)
+        # print "Error handler, <State: %s, Error: %s, Data: %s>" % (return_state, error, error_data)
 
         if not self._is_real_error(return_state, error, error_data):
             return return_state
@@ -158,10 +160,8 @@ class ErrorHandler(object):
             self._report_error(error, error_data)
 
             if self._requires_no_confirmation(return_state, error):
-                print "No confirm: %s %s" % (return_state, error)
                 time.sleep(NO_CONFIRM_DELAY)
                 return return_state
-            print "Confirm: %s %s" % (return_state, error)
 
             next_event = self._event_q.get()
             if next_event.key == event.TERMINATE_PROGRAM:
@@ -192,11 +192,9 @@ class ErrorHandler(object):
     def _get_action(self, error, next_event):
         try:
             action = self._error_specific_event_to_action_map[error][next_event.key]
-            print "Found specific action: %s -> %s" %(error, action)
         except KeyError:
             try:
                 action = self._default_event_to_action_map[next_event.key]
-                print "Found default action: %s -> %s" %(error, action)
             except KeyError:
                 action = self._handle_unrecognized_event
 
@@ -216,14 +214,22 @@ class ErrorHandler(object):
             self.handle_error(None, event.CARD_REMOVE, new_slot)
             return ERROR_NOT_RESOLVED
 
-    def _handle_card_removed_not_reinserted(self, unused_data=None, old_slot=None):
-        assert old_slot is not None
-        name = "".join(self._shop.get_user_s_name(old_slot))[:14]
-        self._send_message_format_safe("\0%s\n\rleft the shop!" % name)
-        users = self._shop.get_user_s(old_slot)
-        self._mailer._send_id_card_email_s(users)
-        self._shop.discharge_user_s(old_slot)
-        return ERROR_RESOLVED
+    def _handle_card_removed_not_reinserted(self, id_number, old_slot=None):
+        try:
+            user = self._shop_user_db.get_shop_user(id_number)
+        except shop_check_in_exceptions.NonexistentUserError as error:
+            return ERROR_NOT_RESOLVED
+        else:
+            if self._shop.is_pod(user):
+                assert old_slot is not None
+                name = "".join(self._shop.get_user_s_name(old_slot))[:14]
+                self._send_message_format_safe("\0%s\n\rleft the shop!" % name)
+                users = self._shop.get_user_s(old_slot)
+                self._mailer._send_id_card_email_s(users)
+                self._shop.discharge_user_s(old_slot)
+                return ERROR_RESOLVED
+            else:
+                return ERROR_NOT_RESOLVED
 
     def _handle_card_insert_default(self, new_slot, unused_error_data=None):
         self.handle_error(None, event.CARD_INSERT, new_slot)
