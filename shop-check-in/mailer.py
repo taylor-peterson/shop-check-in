@@ -3,8 +3,8 @@ import os
 import shop_user
 from shop_user_database import PATH_LOGIN_INFO
 
-EMAIL_TEMPLATE = """From: From Person <%s>
-To: To Person <%s>
+EMAIL_TEMPLATE = """From: Shop Check-In System <%s>
+To: <%s> <%s>
 MIME-Version: 1.0
 Content-type: text/html
 Subject: %s
@@ -51,17 +51,18 @@ class Mailer(object):
         try:
             server.login(self._username, self._password)
         except:
-            print "Could not login to the python server!"
+            print "Could not login to the google server!"
         else:
             try:
                 server.sendmail(self._username, user.email, message)
                 server.quit()
             except:
-                print "Could not send mmail to the the address %s" % user.email
+                print "Could not send mail to the the address %s" % user.email
 
     def _make_id_card_email(self, user):
         body =  EMAIL_BODY_TEMPLATE % (user.name)
         return self._populated_template(self._username,
+                                        user.name,
                                         user.email,
                                         EMAIL_SUBJECT,
                                         body)
@@ -73,6 +74,6 @@ class Mailer(object):
         os.chdir(directory_name)
 
     @staticmethod
-    def _populated_template(from_address, to_address, subject, body):
-        return EMAIL_TEMPLATE % (from_address, to_address, subject, body)
+    def _populated_template(from_address, to_name, to_address, subject, body):
+        return EMAIL_TEMPLATE % (from_address, to_name, to_address, subject, body)
 

@@ -111,7 +111,6 @@ class BoardFsm(object):
             self._send_message(state_message)
             
             next_event = self._get_event()
-            print next_event.key
 
             if next_event.key == event.TERMINATE_PROGRAM:
                 return self._state
