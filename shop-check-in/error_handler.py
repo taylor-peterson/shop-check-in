@@ -90,7 +90,8 @@ class ErrorHandler(object):
         self._error_specific_event_to_action_map = {
             event.CARD_REMOVE: {
                 event.CARD_INSERT: self._handle_card_reinsert,
-                event.CARD_SWIPE: self._handle_card_removed_not_reinserted
+                event.CARD_SWIPE: self._handle_card_removed_not_reinserted,
+                event.BUTTON_CONFIRM: self._do_not_resolve_error
             },
             event.CARD_INSERT: {
                 event.CARD_REMOVE: self._handle_card_uninsert,
