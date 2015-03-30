@@ -1,6 +1,7 @@
 import Queue as queue
 import threading
 import sys
+import time
 
 import winsound
 
@@ -250,9 +251,11 @@ class BoardFsm(object):
             self._send_message_format_safe("\0CHARGING USER:\n\r%s" % user.name)
             self._shop_user_database.increase_debt(user)
 
-        self._play_noise(NOISE_CHARGING_USER)
+            self._play_noise(NOISE_CHARGING_USER)
+            self._send_message_format_safe("\0USER CHARGED:\n\r%s" % user.name[:16])
+            time.sleep(1)
 
-        return STANDBY, None
+        return REMOVING_USER, None
 
     @_process_card_swipe
     def _clearing_debt_process_card_swipe(self, user, ignored_cargo):

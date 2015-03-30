@@ -9,7 +9,8 @@ from mailer import Mailer
 import winsound
 import time
 
-DEFAULT_ERROR_MESSAGE = "\0ACTION NOT\n\rRECOGNIZED."
+DEFAULT_ERROR_MESSAGE = "\0ACTION NOT REC-\n\rOGNIZED. CNFM"
+DEFAULT_ERROR_MESSAGE_NO_CONFIRM = "\0ACTION NOT\n\rRECOGNIZED."
 ERROR_RESOLVED = "error_resolved"
 ERROR_NOT_RESOLVED = "error_not_resolved"
 NO_CONFIRM_DELAY = 1.5 # Second
@@ -90,12 +91,11 @@ class ErrorHandler(object):
         self._error_specific_event_to_action_map = {
             event.CARD_REMOVE: {
                 event.CARD_INSERT: self._handle_card_reinsert,
-                event.CARD_SWIPE: self._handle_card_removed_not_reinserted,
-                event.BUTTON_CONFIRM: self._do_not_resolve_error
+                event.CARD_SWIPE: self._handle_card_removed_not_reinserted
             },
             event.CARD_INSERT: {
                 event.CARD_REMOVE: self._handle_card_uninsert,
-                event.BUTTON_CONFIRM: self._handle_unrecognized_event
+                event.CARD_SWIPE: self._handle_confirm_default
             },
             event.SWITCH_FLIP_ON: {
                 event.SWITCH_FLIP_OFF: self._handle_switch_off_when_switch_was_on,
@@ -158,7 +158,7 @@ class ErrorHandler(object):
 
         while True:
 
-            self._report_error(error, error_data)
+            self._report_error(return_state, error, error_data)
 
             if self._requires_no_confirmation(return_state, error):
                 time.sleep(NO_CONFIRM_DELAY)
@@ -182,8 +182,11 @@ class ErrorHandler(object):
         self._error = error
         self._error_data = error_data
 
-    def _report_error(self, error, error_data):
-        error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
+    def _report_error(self, return_state, error, error_data):
+        if self._requires_no_confirmation(return_state, error):
+            error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE_NO_CONFIRM)
+        else:
+            error_msg = self._messages_to_display.get(error, DEFAULT_ERROR_MESSAGE)
         error_msg += str(error_data) if error_data else ""
         self._send_message_format_safe(error_msg)
 
