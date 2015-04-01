@@ -245,7 +245,7 @@ class BoardFsm(object):
         return STANDBY, None
 
     def _removing_user_process_charge(self, ignored_event_data, slot):
-        user_s = self._shop.discharge_user_s(slot)
+        user_s = self._shop.get_user_s(slot)
 
         for user in user_s:
             self._send_message_format_safe("\0CHARGING USER:\n\r%s" % user.name)
