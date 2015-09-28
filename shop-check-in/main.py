@@ -13,7 +13,7 @@ def main():
 
     print "Connecting to Database..."
 
-    shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+    shop_user_db = shop_user_database.ShopUserDatabase()
 
     print "Setting up ID Logger..."
 
