@@ -104,8 +104,12 @@ class ShopUser(object):
                 self._validation_required_changes = True
                 validated_user_data[PROCTOR] = False
             if not ShopUser._is_valid_id(user_data[ID]):
-                validated_user_data[ID] = ShopUser._extract_valid_id(user_data[ID])
-                self._validation_required_changes = True
+	    	try:
+                    validated_user_data[ID] = ShopUser._extract_valid_id(user_data[ID])
+		except shop_check_in_exceptions.MalformedIDNumberError:
+		    print 'User %s has bad id number {%s}. Ignoring.' % (user_data[NAME], user_data[ID])
+                else:
+		    self._validation_required_changes = True
         except ValueError:
             exc_traceback = sys.exc_traceback
             raise shop_check_in_exceptions.InvalidUserError, None, exc_traceback  # TODO: where to catch this error?
@@ -114,7 +118,7 @@ class ShopUser(object):
 
     @staticmethod
     def _is_valid_id(idstring):
-        return len(idstring) == 8 and id_string[0] in '12345'
+        return len(idstring) == 8 and idstring[0] in '12345'
 
     @staticmethod
     def _extract_valid_id(with_extras):
@@ -122,7 +126,7 @@ class ShopUser(object):
         if len(proposed) != 8:
             raise shop_check_in_exceptions.MalformedIDNumberError( \
                 '''Recieved ID string {%s}.
-                   Could not extract a valid 8 character id number''')
+                   Could not extract a valid 8 character id number''' % with_extras)
         return proposed
 
     def __eq__(self, other):

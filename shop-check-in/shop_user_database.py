@@ -66,9 +66,9 @@ class ShopUserDatabase(object):
     def _connect_to_google_spreadsheet(self):
         if self._shop_user_database_google_worksheet is None:
             try:
-            print "Trying to load the spreadsheet",self._spreadsheet_name
-            self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._spreadsheet_name)
-            print "Spreadsheet loaded!"
+                print "Trying to load the spreadsheet",self._spreadsheet_name
+                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._spreadsheet_name)
+                print "Spreadsheet loaded!"
             except (gspread.AuthenticationError, IOError):
                 print "Authentication/IOError"
                 exc_traceback = sys.exc_traceback
@@ -147,9 +147,12 @@ class _ShopUserDatabaseGoogleWorksheet(object):
         shop_users = [shop_user.ShopUser(shop_user_data) for shop_user_data in raw_data]
         for user in shop_users:
             if user.validation_required_changes():
-            print 'Need to update:', user.name
-                self.update_user(user)
-            print 'Updates done'
+                print 'Need to update:', user.name
+		try:
+                   self.update_user(user)
+		except:
+		   print 'Update for %s failed' % user.name
+                print 'Updates done'
         shop_user_database = {user.id_number: user for user in shop_users}
         return shop_user_database
 
