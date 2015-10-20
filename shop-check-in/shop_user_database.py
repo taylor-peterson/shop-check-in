@@ -66,15 +66,15 @@ class ShopUserDatabase(object):
     def _connect_to_google_spreadsheet(self):
         if self._shop_user_database_google_worksheet is None:
             try:
-		print "Trying to get the spreadsheet",self._spreadsheet_name
-                self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._spreadsheet_name)
-		print "Spreadsheet get!"
+            print "Trying to load the spreadsheet",self._spreadsheet_name
+            self._shop_user_database_google_worksheet = _ShopUserDatabaseGoogleWorksheet(self._spreadsheet_name)
+            print "Spreadsheet loaded!"
             except (gspread.AuthenticationError, IOError):
-		print "Authentication/IOError"
+                print "Authentication/IOError"
                 exc_traceback = sys.exc_traceback
                 raise shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError, None, exc_traceback
         else:
-	    print "Okay, testing connection"
+            print "Okay, testing connection"
             try:
                 self._shop_user_database_google_worksheet.test_connection()
             except (IOError, Exception):
@@ -89,7 +89,6 @@ class ShopUserDatabase(object):
             exc_traceback = sys.exc_traceback
             raise shop_check_in_exceptions.NonexistentUserError, None, exc_traceback
         else:
-	    print "Building user from:", user_data
             user = shop_user.ShopUser(user_data)
             self._shop_user_database[user.id_number] = user
             return user
@@ -98,7 +97,7 @@ class ShopUserDatabase(object):
         print "Trying to connect to spreadsheet"
         try:
             self._connect_to_google_spreadsheet()
-	    print "Successfully connected to spreadsheet"
+            print "Successfully connected to spreadsheet"
             self._shop_user_database = self._shop_user_database_google_worksheet.load_shop_user_database()
         except (gspread.GSpreadException, shop_check_in_exceptions.CannotAccessGoogleSpreadsheetsError):
             self._shop_user_database = self._shop_user_database_local.load_shop_user_database()
@@ -133,14 +132,14 @@ class _ShopUserDatabaseGoogleWorksheet(object):
         #password = login_info["GOOGLE_PASSWORD"]
 
 
-	print "Attempting to login via gspread"
+        print "Attempting to login via gspread"
 
-	json_key = json.load(open('oauth2.json'))
-	scope = ['https://spreadsheets.google.com/feeds']
-	credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
-	google_account = gspread.authorize(credentials)
+        json_key = json.load(open('oauth2.json'))
+        scope = ['https://spreadsheets.google.com/feeds']
+        credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
+        google_account = gspread.authorize(credentials)
 
-	print "good!"
+        print "good!"
         self._worksheet = google_account.open(spreadsheet).worksheet(worksheet)
 
     def load_shop_user_database(self):
@@ -148,9 +147,9 @@ class _ShopUserDatabaseGoogleWorksheet(object):
         shop_users = [shop_user.ShopUser(shop_user_data) for shop_user_data in raw_data]
         for user in shop_users:
             if user.validation_required_changes():
-	        print 'Need to update:', user.name
+            print 'Need to update:', user.name
                 self.update_user(user)
-	print 'Updates done'
+            print 'Updates done'
         shop_user_database = {user.id_number: user for user in shop_users}
         return shop_user_database
 

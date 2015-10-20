@@ -37,20 +37,25 @@ class ShopUser(object):
     """ Stores and processes a shop user's data.
         Note that all changes to shop users must go through the database.
     """
-    def __init__(self,
-                 user_data=DEFAULT_USER,):
-	user_data_with_defaults = []
-	for i in xrange(len(DEFAULT_USER)):
-	    user_data_with_defaults.append(user_data[i] if i < len(user_data) else DEFAULT_USER[i])
-        
-	self._validation_required_changes = False
+    def __init__(self, user_data = DEFAULT_USER):
+        user_data_with_defaults = ShopUser._pad_end_with_defaults(user_data)
+
+        self._validation_required_changes = False
         self.validated_user_data = self._validate_user_data(user_data_with_defaults)
+
         self.id_number = self.validated_user_data[ID]
         self.name = self.validated_user_data[NAME]
         self.email = self.validated_user_data[EMAIL]
         self._test_date = self.validated_user_data[TEST_DATE]
         self.debt = self.validated_user_data[DEBT]
         self._proctor = self.validated_user_data[PROCTOR]
+
+    @staticmethod
+    def _pad_end_with_defaults(user_data):
+        user_data_with_defaults = []
+        for i in xrange(len(DEFAULT_USER)):
+            user_data_with_defaults.append(user_data[i] if i < len(user_data) else DEFAULT_USER[i])
+        return user_data_with_defaults
 
     def is_shop_certified(self):
         if self.name is DEFAULT_NAME:
@@ -98,15 +103,27 @@ class ShopUser(object):
             else:
                 self._validation_required_changes = True
                 validated_user_data[PROCTOR] = False
-            validated_user_data[ID] = user_data[ID].lstrip('0')[:8]
+            if not ShopUser._is_valid_id(user_data[ID]):
+                validated_user_data[ID] = ShopUser._extract_valid_id(user_data[ID])
+                self._validation_required_changes = True
         except ValueError:
             exc_traceback = sys.exc_traceback
             raise shop_check_in_exceptions.InvalidUserError, None, exc_traceback  # TODO: where to catch this error?
-	except IndexError:
-	    print user_data
-
         else:
             return validated_user_data
+
+    @staticmethod
+    def _is_valid_id(idstring):
+        return len(idstring) == 8 and id_string[0] in '12345'
+
+    @staticmethod
+    def _extract_valid_id(with_extras):
+        proposed = with_extras.lstrip('0')[:8]
+        if len(proposed) != 8:
+            raise shop_check_in_exceptions.MalformedIDNumberError( \
+                '''Recieved ID string {%s}.
+                   Could not extract a valid 8 character id number''')
+        return proposed
 
     def __eq__(self, other):
         if (self.__class__ == other.__class__ and

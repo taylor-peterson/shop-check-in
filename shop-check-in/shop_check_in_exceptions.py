@@ -56,6 +56,15 @@ class NonPodError(ShopUserError):
 
 # endregion
 
+# region Data Format Errors
+
+class DataFormatError(ShopCheckInError):
+    pass
+
+class MalformedIDNumberError(DataFormatError):
+    pass
+
+# endregion
 
 # region Shop User Database Errors
 
