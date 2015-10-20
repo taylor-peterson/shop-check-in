@@ -13,7 +13,7 @@ def main():
 
     print "Connecting to Database..."
 
-    shop_user_db = shop_user_database.ShopUserDatabaseTesting()
+    shop_user_db = shop_user_database.ShopUserDatabase()
 
     print "Setting up ID Logger..."
 
@@ -31,11 +31,15 @@ def main():
 
     board = fsm.BoardFsm(event_q, message_q, shop_user_db)
 
+    print "Starting webserver..."
     server = LiveSite(board._shop)
     server.daemon = True
     server.start()
 
+    print "Running FSM"
     board.run_fsm()
+
+    print "Board shutting down"
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,14 @@ DEFAULT_EMAIL = "nope"
 DEFAULT_ID_NUMBER = "12345678"
 DEFAULT_DEBT = 0
 DEFAULT_PROCTORLINESS = False
+DEFAULT_USER = (DEFAULT_NAME,
+                INVALID_TEST_DATE,
+                IGNORED_DATA,
+                DEFAULT_DEBT,
+                DEFAULT_ID_NUMBER,
+                DEFAULT_DEBT,
+                DEFAULT_PROCTORLINESS)
+
 
 IS_PROCTOR = "Yes"
 IS_NOT_PROCTOR = "No"
@@ -30,16 +38,13 @@ class ShopUser(object):
         Note that all changes to shop users must go through the database.
     """
     def __init__(self,
-                 user_data=(DEFAULT_NAME,
-                            INVALID_TEST_DATE,
-                            IGNORED_DATA,
-                            DEFAULT_DEBT,
-                            DEFAULT_ID_NUMBER,
-                            DEFAULT_DEBT,
-                            DEFAULT_PROCTORLINESS),):
-        self._validation_required_changes = False
-        self.validated_user_data = self._validate_user_data(user_data)
-
+                 user_data=DEFAULT_USER,):
+	user_data_with_defaults = []
+	for i in xrange(len(DEFAULT_USER)):
+	    user_data_with_defaults.append(user_data[i] if i < len(user_data) else DEFAULT_USER[i])
+        
+	self._validation_required_changes = False
+        self.validated_user_data = self._validate_user_data(user_data_with_defaults)
         self.id_number = self.validated_user_data[ID]
         self.name = self.validated_user_data[NAME]
         self.email = self.validated_user_data[EMAIL]
@@ -97,6 +102,9 @@ class ShopUser(object):
         except ValueError:
             exc_traceback = sys.exc_traceback
             raise shop_check_in_exceptions.InvalidUserError, None, exc_traceback  # TODO: where to catch this error?
+	except IndexError:
+	    print user_data
+
         else:
             return validated_user_data
 

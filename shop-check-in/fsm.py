@@ -255,7 +255,7 @@ class BoardFsm(object):
             self._send_message_format_safe("\0USER CHARGED:\n\r%s" % user.name[:16])
             time.sleep(1)
 
-        return REMOVING_USER, None
+        return REMOVING_USER, slot
 
     @_process_card_swipe
     def _clearing_debt_process_card_swipe(self, user, ignored_cargo):
