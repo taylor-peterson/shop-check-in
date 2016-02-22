@@ -3,7 +3,8 @@ import os
 import sys
 
 import json
-from oauth2client.client import SignedJwtAssertionCredentials
+#from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 
 import gspread
 import gspread.exceptions
@@ -134,9 +135,15 @@ class _ShopUserDatabaseGoogleWorksheet(object):
 
         print "Attempting to login via gspread"
 
-        json_key = json.load(open('oauth2.json'))
-        scope = ['https://spreadsheets.google.com/feeds']
-        credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
+        #json_key = json.load(open('oauth2.json','rb'))
+        scopes = ['https://spreadsheets.google.com/feeds']
+        #print "client email"
+        #print json_key['client_email']
+        #print "private key"
+        #print json_key['private_key']
+        #print scope
+        #credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'].encode(), scope)
+        credentials = ServiceAccountCredentials.from_json_keyfile_name('shop-sign-in.json', scopes)
         google_account = gspread.authorize(credentials)
 
         print "good!"
