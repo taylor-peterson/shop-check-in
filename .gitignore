@@ -12,6 +12,10 @@
 
 # Sensitive Information
 sensitive_info.txt
+shop-check-in/*.json
+
+# Logged Data
+shop-check-in/logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
